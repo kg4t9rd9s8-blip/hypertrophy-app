@@ -488,10 +488,22 @@ export default function HypertrophyTrackerApp() {
   <TinyMetric label="Ready" value={`${readinessScore}%`} icon={Zap} />
   <TinyMetric label="Done" value={`${todayCompletion}%`} icon={Check} />
 </div>
-        <div className="grid grid-cols-1 gap-2">
-  <Button className={ui.primary} onClick={() => setSessionMode(!sessionMode)}>
-    <Sparkles className="mr-2 h-5 w-5" />
-    {sessionMode ? "Exit Flow" : "Start Session"}
+<div className="grid grid-cols-1 gap-2">
+  <Button
+    className="group relative flex h-24 w-full items-center justify-center overflow-hidden rounded-[1.7rem] bg-[#007AFF] px-6 text-white shadow-[0_14px_36px_rgba(0,122,255,0.28)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
+    onClick={() => setSessionMode(!sessionMode)}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10" />
+
+    <div className="relative flex items-center justify-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+        <Sparkles className="h-5 w-5" />
+      </div>
+
+      <span className="text-[20px] font-black tracking-[-0.02em]">
+        {sessionMode ? "Exit Session" : "Start Session"}
+      </span>
+    </div>
   </Button>
 </div>
         </CardContent></Card>
