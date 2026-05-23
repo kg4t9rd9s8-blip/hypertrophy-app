@@ -190,31 +190,37 @@ function CompactStepper({ label, value, setValue, step = 1, min = 0, max = null,
   }
 
   return (
-    <div className="rounded-[1.25rem] bg-[#F5F5F7] p-2">
-      <p className="mb-1 text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
+    <div className="rounded-[1.15rem] bg-[#F5F5F7] p-2">
+      <p className="mb-1 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#8E8E93]">
         {label}
       </p>
 
-      <div className="flex items-center justify-between rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05),0_3px_10px_rgba(0,0,0,0.04)]">
+      <div className="flex h-12 items-center justify-between rounded-full bg-white px-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06),0_3px_10px_rgba(0,0,0,0.04)]">
         <button
           type="button"
+          aria-label={`Decrease ${label}`}
           onClick={decrease}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[#007AFF] transition active:scale-90 active:bg-[#EAF3FF]"
+          className="group flex h-12 w-12 items-center justify-center rounded-full transition active:scale-95"
         >
-          <Minus className="h-4 w-4" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F2F7] text-[#007AFF] transition group-active:bg-[#EAF3FF]">
+            <Minus className="h-4 w-4" />
+          </span>
         </button>
 
-        <div className="min-w-10 text-center text-[18px] font-black tracking-[-0.04em] text-[#1D1D1F]">
+        <div className="min-w-9 text-center text-[18px] font-black tracking-[-0.04em] text-[#1D1D1F]">
           {value || 0}
           {suffix}
         </div>
 
         <button
           type="button"
+          aria-label={`Increase ${label}`}
           onClick={increase}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.24)] transition active:scale-90"
+          className="group flex h-12 w-12 items-center justify-center rounded-full transition active:scale-95"
         >
-          <Plus className="h-4 w-4" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.24)] transition group-active:bg-[#006FE6]">
+            <Plus className="h-4 w-4" />
+          </span>
         </button>
       </div>
     </div>
@@ -829,16 +835,184 @@ function SetCards() {
     return <div className="space-y-5"><h1 className="text-[36px] font-black tracking-[-0.045em]">Library</h1><Card className={ui.card}><CardContent className="space-y-3 p-4"><div className="flex items-center gap-2"><Plus className="h-5 w-5 text-[#007AFF]" /><h2 className="text-lg font-black tracking-[-0.02em]">Add Exercise</h2></div><input value={newExercise.name} onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })} placeholder="Exercise name" className={ui.field} /><input value={newExercise.muscle} onChange={(e) => setNewExercise({ ...newExercise, muscle: e.target.value })} placeholder="Muscle group" className={ui.field} /><select value={newExercise.day} onChange={(e) => setNewExercise({ ...newExercise, day: e.target.value })} className={ui.field}>{days.map((d) => <option key={d}>{d}</option>)}</select><Button onClick={addExercise} className="w-full rounded-[1.25rem] bg-[#1D1D1F] py-5 font-bold text-white hover:bg-black">Add exercise</Button></CardContent></Card><Card className={ui.card}><CardContent className="space-y-2 p-4">{exercises.map((e) => <div key={e.id} className="flex items-center justify-between rounded-[1.4rem] bg-[#F5F5F7] p-3"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-black text-[#007AFF]">{e.icon}</div><div><p className="font-black tracking-[-0.02em]">{e.name}</p><p className="text-sm font-semibold text-[#6E6E73]">{e.day} · {e.muscle}</p></div></div><ChevronRight className="h-5 w-5 text-[#C7C7CC]" /></div>)}</CardContent></Card></div>;
   }
 
-  function SettingsView() {
-    const rows = [
-      ["Sleep", "sleep", "Higher is better"],
-      ["Soreness", "soreness", "Lower is better"],
-      ["Stress", "stress", "Lower is better"],
-      ["Motivation", "motivation", "Higher is better"]
-    ];
-    return <div className="space-y-5"><h1 className="text-[36px] font-black tracking-[-0.045em]">Settings</h1><Card className={ui.card}><CardContent className="space-y-4 p-4"><div><p className={ui.label}>Readiness</p><p className="mt-1 text-3xl font-black tracking-[-0.04em]">{readinessScore}%</p></div>{rows.map(([label, key, hint]) => <div key={key} className="rounded-[1.4rem] bg-[#F5F5F7] p-4"><div className="flex items-center justify-between"><div><p className="font-black">{label}</p><p className="text-sm font-semibold text-[#6E6E73]">{hint}</p></div><p className="text-2xl font-black text-[#007AFF]">{readiness[key]}</p></div><input type="range" min="1" max="10" value={readiness[key]} onChange={(e) => setReadiness({ ...readiness, [key]: Number(e.target.value) })} className="mt-3 w-full accent-[#007AFF]" /></div>)}</CardContent></Card><Card className={ui.card}><CardContent className="space-y-3 p-4"><p className={ui.label}>Profile</p><input className={ui.field} value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} /><input className={ui.field} value={profile.goal} onChange={(e) => setProfile({ ...profile, goal: e.target.value })} /><input className={ui.field} value={profile.experience} onChange={(e) => setProfile({ ...profile, experience: e.target.value })} /><input className={ui.field} value={profile.weakPoint} onChange={(e) => setProfile({ ...profile, weakPoint: e.target.value })} /></CardContent></Card><Button variant="outline" onClick={resetData} className="w-full rounded-[1.25rem] border-black/[0.06] bg-white py-5 font-bold text-[#FF3B30] hover:bg-[#FFF0F0]"><RotateCcw className="mr-2 h-4 w-4" />Reset all training data</Button></div>;
+function SettingsView() {
+  const rows = [
+    {
+      label: "Sleep",
+      key: "sleep",
+      hint: "Higher is better",
+      low: "Poor",
+      high: "Excellent"
+    },
+    {
+      label: "Soreness",
+      key: "soreness",
+      hint: "Lower is better",
+      low: "Fresh",
+      high: "Smashed"
+    },
+    {
+      label: "Stress",
+      key: "stress",
+      hint: "Lower is better",
+      low: "Calm",
+      high: "High"
+    },
+    {
+      label: "Motivation",
+      key: "motivation",
+      hint: "Higher is better",
+      low: "Low",
+      high: "High"
+    }
+  ];
+
+  function updateReadiness(key, value) {
+    setReadiness({ ...readiness, [key]: Number(value) });
+    haptic();
   }
 
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-[36px] font-black tracking-[-0.045em]">Settings</h1>
+        <p className={ui.sub}>Recovery, profile, and app controls</p>
+      </div>
+
+      <Card className={ui.card}>
+        <CardContent className="space-y-5 p-4">
+          <div className="rounded-[1.7rem] bg-[#1D1D1F] p-5 text-white shadow-[0_14px_36px_rgba(0,0,0,0.16)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">
+                  Readiness
+                </p>
+
+                <p className="mt-1 text-[42px] font-black tracking-[-0.06em]">
+                  {readinessScore}%
+                </p>
+              </div>
+
+              <div className="flex h-14 w-14 items-center justify-center rounded-[1.2rem] bg-white/10">
+                <Zap className="h-7 w-7 text-[#FFD60A]" />
+              </div>
+            </div>
+
+            <p className="mt-3 text-sm font-semibold leading-relaxed text-white/70">
+              Used to adjust loading recommendations when fatigue is high.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {rows.map((row) => (
+              <div
+                key={row.key}
+                className="rounded-[1.55rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[17px] font-black tracking-[-0.03em] text-[#1D1D1F]">
+                      {row.label}
+                    </p>
+                    <p className="text-sm font-semibold text-[#6E6E73]">
+                      {row.hint}
+                    </p>
+                  </div>
+
+                  <div className="flex h-11 min-w-11 items-center justify-center rounded-full bg-white px-3 text-xl font-black tracking-[-0.04em] text-[#007AFF] shadow-sm">
+                    {readiness[row.key]}
+                  </div>
+                </div>
+
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={readiness[row.key]}
+                  onChange={(e) => updateReadiness(row.key, e.target.value)}
+                  className="mt-4 w-full accent-[#007AFF]"
+                />
+
+                <div className="mt-1 flex justify-between px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8E8E93]">
+                  <span>{row.low}</span>
+                  <span>{row.high}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={ui.card}>
+        <CardContent className="space-y-3 p-4">
+          <div>
+            <p className={ui.label}>Profile</p>
+            <p className="mt-1 text-sm font-semibold text-[#6E6E73]">
+              Used for display and future programming logic.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <input
+              className={ui.field}
+              value={profile.name}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              placeholder="Name"
+            />
+
+            <input
+              className={ui.field}
+              value={profile.goal}
+              onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
+              placeholder="Goal"
+            />
+
+            <input
+              className={ui.field}
+              value={profile.experience}
+              onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
+              placeholder="Experience level"
+            />
+
+            <input
+              className={ui.field}
+              value={profile.weakPoint}
+              onChange={(e) => setProfile({ ...profile, weakPoint: e.target.value })}
+              placeholder="Weak point"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[2rem] border border-[#FF3B30]/15 bg-[#FFF4F4] shadow-[0_18px_60px_rgba(255,59,48,0.08)]">
+        <CardContent className="space-y-4 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#FF3B30] shadow-sm">
+              <RotateCcw className="h-5 w-5" />
+            </div>
+
+            <div>
+              <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
+                Reset training data
+              </p>
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-[#6E6E73]">
+                This clears your local logs from this device. There is currently no cloud backup.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={resetData}
+            className="flex min-h-[58px] w-full items-center justify-center rounded-[1.35rem] bg-[#FF3B30] px-5 text-[16px] font-black tracking-[-0.02em] text-white shadow-[0_10px_26px_rgba(255,59,48,0.24)] transition active:scale-[0.985]"
+          >
+            Reset All Training Data
+          </button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
   return (
     <div className={ui.page}>
       <div className="pointer-events-none fixed inset-0 overflow-hidden"><div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.95),transparent_34%),radial-gradient(circle_at_top_right,rgba(0,122,255,0.10),transparent_28%)]" /><div className="absolute bottom-[-160px] left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[#007AFF]/[0.06] blur-3xl" /></div>
