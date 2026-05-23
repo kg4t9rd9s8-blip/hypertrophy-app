@@ -173,37 +173,50 @@ function formatTime(seconds) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function Stepper({ value, setValue, step = 1, min = 0, suffix = "" }) {
+function CompactStepper({ label, value, setValue, step = 1, min = 0, max = null, suffix = "" }) {
   const n = Number(value) || 0;
 
+  function decrease() {
+    const next = Math.max(min, roundToIncrement(n - step, step));
+    setValue(next);
+    haptic();
+  }
+
+  function increase() {
+    const raw = roundToIncrement(n + step, step);
+    const next = max !== null ? Math.min(max, raw) : raw;
+    setValue(next);
+    haptic();
+  }
+
   return (
-    <div className="flex h-11 items-center justify-between rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06),0_3px_10px_rgba(0,0,0,0.05)]">
-      <button
-        type="button"
-        className="flex h-11 w-11 items-center justify-center rounded-full text-[#007AFF] transition active:scale-90 active:bg-[#EAF3FF]"
-        onClick={() => {
-          setValue(Math.max(min, roundToIncrement(n - step, step)));
-          haptic();
-        }}
-      >
-        <Minus className="h-4 w-4" />
-      </button>
+    <div className="rounded-[1.25rem] bg-[#F5F5F7] p-2">
+      <p className="mb-1 text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
+        {label}
+      </p>
 
-      <div className="min-w-10 text-center text-[20px] font-black tracking-[-0.04em] text-[#1D1D1F]">
-        {value || 0}
-        {suffix}
+      <div className="flex items-center justify-between rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05),0_3px_10px_rgba(0,0,0,0.04)]">
+        <button
+          type="button"
+          onClick={decrease}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[#007AFF] transition active:scale-90 active:bg-[#EAF3FF]"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+
+        <div className="min-w-10 text-center text-[18px] font-black tracking-[-0.04em] text-[#1D1D1F]">
+          {value || 0}
+          {suffix}
+        </div>
+
+        <button
+          type="button"
+          onClick={increase}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.24)] transition active:scale-90"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
       </div>
-
-      <button
-        type="button"
-        className="flex h-11 w-11 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.24)] transition active:scale-90"
-        onClick={() => {
-          setValue(roundToIncrement(n + step, step));
-          haptic();
-        }}
-      >
-        <Plus className="h-4 w-4" />
-      </button>
     </div>
   );
 }
@@ -401,22 +414,39 @@ export default function HypertrophyTrackerApp() {
   }
 
 function SetCards() {
+  const completedCount = setInputs.filter((s) => s.complete).length;
+
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
+            Working Sets
+          </p>
+          <p className="text-sm font-semibold text-[#6E6E73]">
+            {completedCount} of {setInputs.length} completed
+          </p>
+        </div>
+
+        <div className="rounded-full bg-[#F5F5F7] px-3 py-1 text-xs font-black text-[#6E6E73]">
+          {activeExercise?.targetMin}-{activeExercise?.targetMax} reps
+        </div>
+      </div>
+
       {setInputs.map((s, i) => (
         <motion.div
           layout
           key={i}
-          className={`overflow-hidden rounded-[1.7rem] border shadow-[0_8px_24px_rgba(0,0,0,0.055)] transition ${
+          className={`overflow-hidden rounded-[1.55rem] border transition ${
             s.complete
-              ? "border-[#34C759]/25 bg-[#F0FBF4]"
-              : "border-black/[0.06] bg-white"
+              ? "border-[#34C759]/25 bg-[#F0FBF4] shadow-[0_6px_18px_rgba(52,199,89,0.08)]"
+              : "border-black/[0.06] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.045)]"
           }`}
         >
-          <div className="flex items-center justify-between px-4 pt-4">
+          <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${
+                className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black ${
                   s.complete
                     ? "bg-[#34C759] text-white"
                     : "bg-[#F2F2F7] text-[#007AFF]"
@@ -426,11 +456,11 @@ function SetCards() {
               </div>
 
               <div>
-                <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
+                <p className="text-[17px] font-black tracking-[-0.03em] text-[#1D1D1F]">
                   Set {i + 1}
                 </p>
-                <p className="text-sm font-semibold text-[#6E6E73]">
-                  {s.complete ? "Completed" : "Enter load, reps, and RIR"}
+                <p className="text-xs font-semibold text-[#6E6E73]">
+                  {s.complete ? "Logged" : "Set load, reps, and RIR"}
                 </p>
               </div>
             </div>
@@ -444,43 +474,32 @@ function SetCards() {
                   : "bg-[#F2F2F7] text-[#007AFF]"
               }`}
             >
-              {s.complete ? "Done" : "Complete"}
+              {s.complete ? "Done" : "Log"}
             </button>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 divide-x divide-black/[0.06] border-t border-black/[0.06] bg-[#F9F9FB]">
-            <div className="space-y-2 p-3">
-              <p className="text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
-                kg
-              </p>
-              <Stepper
-                value={s.weight}
-                setValue={(v) => updateSet(i, "weight", v)}
-                step={activeExercise?.increment || 2.5}
-              />
-            </div>
+          <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+            <CompactStepper
+              label="kg"
+              value={s.weight}
+              setValue={(v) => updateSet(i, "weight", v)}
+              step={activeExercise?.increment || 2.5}
+            />
 
-            <div className="space-y-2 p-3">
-              <p className="text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
-                reps
-              </p>
-              <Stepper
-                value={s.reps}
-                setValue={(v) => updateSet(i, "reps", v)}
-                step={1}
-              />
-            </div>
+            <CompactStepper
+              label="reps"
+              value={s.reps}
+              setValue={(v) => updateSet(i, "reps", v)}
+              step={1}
+            />
 
-            <div className="space-y-2 p-3">
-              <p className="text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
-                RIR
-              </p>
-              <Stepper
-                value={s.rir}
-                setValue={(v) => updateSet(i, "rir", Math.min(5, v))}
-                step={1}
-              />
-            </div>
+            <CompactStepper
+              label="RIR"
+              value={s.rir}
+              setValue={(v) => updateSet(i, "rir", v)}
+              step={1}
+              max={5}
+            />
           </div>
         </motion.div>
       ))}
@@ -602,28 +621,31 @@ function SetCards() {
           <ExerciseSelector />
           <div className={`rounded-[1.6rem] border p-5 ${recClass(rec?.tone)}`}><div className="flex items-center gap-2"><Target className="h-5 w-5" /><p className="text-sm font-black uppercase tracking-wide">Recommendation</p></div><p className="mt-2 text-3xl font-black leading-tight tracking-[-0.04em]">{rec?.label}</p><p className="mt-1 text-2xl font-black tracking-[-0.03em]">{rec?.weight ? `${rec.weight} kg` : "Choose load"}</p><p className="mt-2 text-sm font-semibold leading-snug opacity-90">{rec?.reason}</p></div>
           <SetCards />
-<Button
-  onClick={saveSession}
-  className="group relative flex h-20 w-full items-center justify-center overflow-hidden rounded-[1.7rem] bg-[#007AFF] px-6 text-white shadow-[0_14px_36px_rgba(0,122,255,0.28)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
->
-  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10" />
 
-  <div className="relative flex items-center justify-center gap-3">
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
-      <Check className="h-5 w-5" />
-    </div>
+          <Button
+            onClick={saveSession}
+            className="group relative flex min-h-[72px] w-full items-center justify-center overflow-hidden rounded-[1.6rem] bg-[#007AFF] px-6 text-white shadow-[0_12px_32px_rgba(0,122,255,0.25)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10" />
 
-    <span className="text-[19px] font-black tracking-[-0.02em]">
-      Save Exercise
-    </span>
-  </div>
-</Button>          <ProgressBlock compact />
+            <div className="relative flex items-center justify-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+                <Check className="h-5 w-5" />
+              </div>
+
+              <span className="text-[19px] font-black tracking-[-0.02em]">
+                Save Exercise
+              </span>
+            </div>
+          </Button>
+
+          <ProgressBlock compact />
         </CardContent></Card>
       </div>
     );
   }
 
-function Progress() {
+  function Progress() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
