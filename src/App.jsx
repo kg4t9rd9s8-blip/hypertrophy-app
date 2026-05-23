@@ -426,89 +426,89 @@ function SetCards() {
     <div className="space-y-3">
       <div className="flex items-end justify-between px-1">
         <div>
-          <p className="text-[20px] font-black tracking-[-0.04em] text-[#1D1D1F]">
-            Working Sets
+          <p className="text-[21px] font-black tracking-[-0.045em] text-[#1D1D1F]">
+            Sets
           </p>
           <p className="text-sm font-semibold text-[#6E6E73]">
-            {completedCount} of {setInputs.length} completed
+            {completedCount}/{setInputs.length} logged
           </p>
         </div>
 
-        <div className="rounded-full bg-[#F2F2F7] px-3 py-1 text-xs font-black text-[#6E6E73]">
+        <div className="rounded-full bg-[#F2F2F7] px-3 py-1.5 text-xs font-black tracking-[-0.01em] text-[#6E6E73]">
           {activeExercise?.targetMin}-{activeExercise?.targetMax} reps
         </div>
       </div>
 
-      {setInputs.map((s, i) => (
-        <motion.div
-          layout
-          key={i}
-          className={`rounded-[1.6rem] border px-4 py-4 transition ${
-            s.complete
-              ? "border-[#34C759]/20 bg-[#F4FBF6] shadow-[0_4px_14px_rgba(52,199,89,0.06)]"
-              : "border-black/[0.06] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.035)]"
-          }`}
-        >
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${
+      <div className="overflow-hidden rounded-[1.75rem] border border-black/[0.06] bg-white shadow-[0_10px_32px_rgba(0,0,0,0.055)]">
+        {setInputs.map((s, i) => (
+          <motion.div
+            layout
+            key={i}
+            className={`px-4 py-4 transition ${
+              i !== 0 ? "border-t border-black/[0.06]" : ""
+            } ${s.complete ? "bg-[#F5FFF8]" : "bg-white"}`}
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                    s.complete
+                      ? "bg-[#34C759] text-white"
+                      : "bg-[#F2F2F7] text-[#007AFF]"
+                  }`}
+                >
+                  {s.complete ? <Check className="h-4 w-4" /> : i + 1}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[17px] font-black tracking-[-0.035em] text-[#1D1D1F]">
+                    Set {i + 1}
+                  </p>
+                  <p className="text-xs font-semibold text-[#8E8E93]">
+                    {s.complete ? "Logged" : "Tap values, then log"}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => markSetComplete(i)}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 ${
                   s.complete
                     ? "bg-[#34C759] text-white"
                     : "bg-[#F2F2F7] text-[#007AFF]"
                 }`}
               >
-                {s.complete ? <Check className="h-4 w-4" /> : i + 1}
-              </div>
-
-              <div>
-                <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
-                  Set {i + 1}
-                </p>
-                <p className="text-sm font-semibold text-[#6E6E73]">
-                  {s.complete ? "Logged" : "Adjust values and log"}
-                </p>
-              </div>
+                {s.complete ? "Done" : "Log"}
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => markSetComplete(i)}
-              className={`rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 ${
-                s.complete
-                  ? "bg-[#34C759] text-white"
-                  : "bg-[#F2F2F7] text-[#007AFF]"
-              }`}
-            >
-              {s.complete ? "Done" : "Log"}
-            </button>
-          </div>
+            <div className="grid grid-cols-3 gap-2">
+              <NativeValueControl
+                label="kg"
+                value={s.weight}
+                setValue={(v) => updateSet(i, "weight", v)}
+                step={activeExercise?.increment || 2.5}
+              />
 
-          <div className="grid grid-cols-3 gap-2">
-            <CompactStepper
-              label="kg"
-              value={s.weight}
-              setValue={(v) => updateSet(i, "weight", v)}
-              step={activeExercise?.increment || 2.5}
-            />
+              <NativeValueControl
+                label="reps"
+                value={s.reps}
+                setValue={(v) => updateSet(i, "reps", v)}
+                step={1}
+              />
 
-            <CompactStepper
-              label="reps"
-              value={s.reps}
-              setValue={(v) => updateSet(i, "reps", v)}
-              step={1}
-            />
-
-            <CompactStepper
-              label="RIR"
-              value={s.rir}
-              setValue={(v) => updateSet(i, "rir", v)}
-              step={1}
-              max={5}
-            />
-          </div>
-        </motion.div>
-      ))}
+              <NativeValueControl
+                label="RIR"
+                value={s.rir}
+                setValue={(v) => updateSet(i, "rir", v)}
+                step={1}
+                max={5}
+              />
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -630,16 +630,16 @@ function SetCards() {
 
 <Button
   onClick={saveSession}
-  className="group relative flex min-h-[64px] w-full items-center justify-center overflow-hidden rounded-[1.5rem] bg-[#007AFF] px-5 text-white shadow-[0_10px_26px_rgba(0,122,255,0.22)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
+  className="group relative flex min-h-[62px] w-full items-center justify-center overflow-hidden rounded-[1.45rem] bg-[#007AFF] px-5 text-white shadow-[0_10px_26px_rgba(0,122,255,0.22)] transition active:scale-[0.985]"
 >
-  <div className="absolute inset-0 bg-gradient-to-b from-white/16 via-transparent to-black/8" />
+  <div className="absolute inset-0 bg-gradient-to-b from-white/18 via-transparent to-black/10" />
 
   <div className="relative flex items-center justify-center gap-3">
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/18">
-      <Check className="h-5 w-5" />
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/18">
+      <Check className="h-4 w-4" />
     </div>
 
-    <span className="text-[18px] font-black tracking-[-0.02em]">
+    <span className="text-[18px] font-black tracking-[-0.025em]">
       Save Exercise
     </span>
   </div>
@@ -652,7 +652,7 @@ function SetCards() {
   }
 
   function Progress() {
-  return (
+      return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div>
