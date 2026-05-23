@@ -14,6 +14,16 @@ function Button({ className = "", children, onClick, type = "button", disabled =
 }
 
 const STORAGE_KEY = "brandon_hypertrophy_native_v1";
+const defaultProfile = {
+  name: "Brandon",
+  goal: "Hypertrophy",
+  experience: "Advanced",
+  priority: "Upper chest / delts",
+  frequency: 5,
+  progressionStyle: "Double progression",
+  deloadFrequency: 6,
+  units: "kg"
+};
 
 const defaultExercises = [
   { id: "flat-bench", day: "Push A", name: "Flat Barbell Bench Press", sets: 3, targetMin: 6, targetMax: 10, rirTarget: 1, increment: 2.5, muscle: "Chest", icon: "◐", rest: 150 },
@@ -112,18 +122,178 @@ function sessionStats(session, exercise) {
   };
 }
 
-function recommendation(exercise, lastSession, weekNumber, readiness) {
+function isPriorityExercise(exercise, profile) {
+  const priority = String(profile?.priority || profile?.weakPoint || "").toLowerCase();
+  const name = String(exercise?.name || "").toLowerCase();
+  const muscle = String(exercise?.muscle || "").toLowerCase();
+
+  if (!priority) return false;
+
+  if (priority.includes("upper chest") && (name.includes("incline") || muscle.includes("chest"))) return true;
+  if (priority.includes("delt") && muscle.includes("delt")) return true;
+  if (priority.includes("back") && (muscle.includes("back") || muscle.includes("lat"))) return true;
+  if (priority.includes("arms") && (muscle.includes("biceps") || muscle.includes("triceps"))) return true;
+  if (priority.includes("legs") && (muscle.includes("quad") || muscle.includes("hamstring") || muscle.includes("glute"))) return true;
+
+  return priority
+    .split(/[\/, ]+/)
+    .filter(Boolean)
+    .some((token) => name.includes(token) || muscle.includes(token));
+}
+
+function getProgressionRules(profile, exercise) {
+  const goal = String(profile?.goal || "Hypertrophy").toLowerCase();
+  const experience = String(profile?.experience || "Advanced").toLowerCase();
+  const style = String(profile?.progressionStyle || "Double progression").toLowerCase();
+
+  let incrementMultiplier = 1;
+  let topRangeBuffer = 0;
+  let rirBuffer = 0;
+
+  if (experience.includes("beginner")) {
+    incrementMultiplier = 1.25;
+    topRangeBuffer = -1;
+  }
+
+  if (experience.includes("intermediate")) {
+    incrementMultiplier = 1;
+  }
+
+  if (experience.includes("advanced")) {
+    incrementMultiplier = 0.75;
+    rirBuffer = 0.25;
+  }
+
+  if (goal.includes("strength")) {
+    incrementMultiplier += 0.25;
+    rirBuffer += 0.25;
+  }
+
+  if (goal.includes("maintenance")) {
+    incrementMultiplier = 0.5;
+    topRangeBuffer = 1;
+  }
+
+  if (goal.includes("fat")) {
+    incrementMultiplier = 0.75;
+    topRangeBuffer = 0;
+  }
+
+  if (style.includes("conservative")) {
+    incrementMultiplier *= 0.75;
+    topRangeBuffer += 1;
+  }
+
+  if (style.includes("aggressive")) {
+    incrementMultiplier *= 1.25;
+    topRangeBuffer -= 1;
+  }
+
+  if (isPriorityExercise(exercise, profile)) {
+    topRangeBuffer -= 1;
+  }
+
+  return {
+    incrementMultiplier,
+    topRangeBuffer,
+    rirBuffer
+  };
+}
+
+function adjustedIncrement(exercise, profile) {
+  const base = Number(exercise.increment) || 1;
+  const rules = getProgressionRules(profile, exercise);
+  const raw = base * rules.incrementMultiplier;
+
+  if (base >= 2.5) return Math.max(1.25, roundToIncrement(raw, 1.25));
+  if (base >= 2) return Math.max(1, roundToIncrement(raw, 1));
+  return Math.max(0.5, roundToIncrement(raw, 0.5));
+}
+
+function recommendation(exercise, lastSession, weekNumber, readiness, profile = defaultProfile) {
   const lastWeight = bestWeightFromSession(lastSession);
-  const deload = weekNumber % 6 === 0;
+  const deloadFrequency = Number(profile?.deloadFrequency) || 6;
+  const deload = weekNumber % deloadFrequency === 0;
   const readinessPenalty = readiness < 55;
-  if (!lastSession || lastWeight === "") return { label: "Calibrate", weight: "", tone: "neutral", reason: "Choose a load that leaves 1–2 RIR. First exposure is calibration." };
+  const priority = isPriorityExercise(exercise, profile);
+  const rules = getProgressionRules(profile, exercise);
+  const increment = adjustedIncrement(exercise, profile);
+
+  if (!lastSession || lastWeight === "") {
+    return {
+      label: priority ? "Priority calibrate" : "Calibrate",
+      weight: "",
+      tone: "neutral",
+      reason: priority
+        ? "Priority movement. Pick a controlled load with 1–2 RIR and log it cleanly."
+        : "Choose a load that leaves 1–2 RIR. First exposure is calibration."
+    };
+  }
+
   const stats = sessionStats(lastSession, exercise);
-  if (!stats) return { label: "Repeat", weight: lastWeight, tone: "neutral", reason: "Previous data was incomplete. Repeat and log properly." };
-  if (deload || readinessPenalty) return { label: "Regulate", weight: roundToIncrement(lastWeight * 0.9, exercise.increment), tone: "warning", reason: deload ? "Scheduled deload. Reduce load and leave more in reserve." : "Readiness is low. Reduce load and protect recovery." };
-  if (stats.allTopRange && !stats.tooHard) return { label: "Increase", weight: roundToIncrement(Number(lastWeight) + Number(exercise.increment), exercise.increment), tone: "good", reason: "Top of range achieved without excessive grind. Add load." };
-  if (stats.belowMin || stats.tooHard) return { label: "Reduce", weight: roundToIncrement(Number(lastWeight) - Number(exercise.increment), exercise.increment), tone: "bad", reason: "Too heavy for productive hypertrophy. Fix the load." };
-  if (stats.tooEasy) return { label: "Increase", weight: roundToIncrement(Number(lastWeight) + Number(exercise.increment), exercise.increment), tone: "good", reason: "RIR suggests the work was under-dosed." };
-  return { label: "Hold", weight: lastWeight, tone: "neutral", reason: "Keep load and beat reps before increasing." };
+
+  if (!stats) {
+    return {
+      label: "Repeat",
+      weight: lastWeight,
+      tone: "neutral",
+      reason: "Previous data was incomplete. Repeat and log properly."
+    };
+  }
+
+  if (deload || readinessPenalty) {
+    return {
+      label: "Regulate",
+      weight: roundToIncrement(lastWeight * 0.9, exercise.increment),
+      tone: "warning",
+      reason: deload
+        ? `Scheduled deload. Your profile is set to deload every ${deloadFrequency} weeks.`
+        : "Readiness is low. Reduce load and protect recovery."
+    };
+  }
+
+  const targetForIncrease = Math.max(exercise.targetMin, exercise.targetMax + rules.topRangeBuffer);
+  const avgRirOkay = stats.avgRir === null || stats.avgRir >= exercise.rirTarget + rules.rirBuffer;
+  const reps = lastSession.sets.map((s) => Number(s.reps) || 0);
+  const reachedTarget = reps.every((r) => r >= targetForIncrease);
+
+  if (reachedTarget && avgRirOkay && !stats.tooHard) {
+    return {
+      label: priority ? "Priority increase" : "Increase",
+      weight: roundToIncrement(Number(lastWeight) + increment, exercise.increment),
+      tone: "good",
+      reason: priority
+        ? `Priority exercise matched your profile target. Add load if execution stayed strict.`
+        : "Target reps achieved without excessive grind. Add load."
+    };
+  }
+
+  if (stats.belowMin || stats.tooHard) {
+    return {
+      label: "Reduce",
+      weight: roundToIncrement(Number(lastWeight) - Number(exercise.increment), exercise.increment),
+      tone: "bad",
+      reason: "Too heavy for productive hypertrophy. Fix the load."
+    };
+  }
+
+  if (stats.tooEasy) {
+    return {
+      label: priority ? "Priority increase" : "Increase",
+      weight: roundToIncrement(Number(lastWeight) + increment, exercise.increment),
+      tone: "good",
+      reason: "RIR suggests the work was under-dosed."
+    };
+  }
+
+  return {
+    label: priority ? "Priority hold" : "Hold",
+    weight: lastWeight,
+    tone: "neutral",
+    reason: priority
+      ? "Priority movement. Hold load and push reps with strict execution."
+      : "Keep load and beat reps before increasing."
+  };
 }
 
 function recClass(tone) {
@@ -167,7 +337,7 @@ export default function HypertrophyTrackerApp() {
   const [readiness, setReadiness] = useState({ sleep: 7, soreness: 4, stress: 4, motivation: 8 });
   const [restSeconds, setRestSeconds] = useState(0);
   const [celebration, setCelebration] = useState(null);
-  const [profile, setProfile] = useState({ name: "Brandon", goal: "Hypertrophy", experience: "Advanced", weakPoint: "Upper chest / delts" });
+  const [profile, setProfile] = useState(defaultProfile);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -179,7 +349,7 @@ export default function HypertrophyTrackerApp() {
       if (parsed.weekNumber) setWeekNumber(parsed.weekNumber);
       if (parsed.selectedDay) setSelectedDay(parsed.selectedDay);
       if (parsed.readiness) setReadiness(parsed.readiness);
-      if (parsed.profile) setProfile(parsed.profile);
+      if (parsed.profile) setProfile({ ...defaultProfile, ...parsed.profile });
     } catch {}
   }, []);
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify({ exercises, logs, weekNumber, selectedDay, readiness, profile })); }, [exercises, logs, weekNumber, selectedDay, readiness, profile]);
@@ -189,21 +359,21 @@ export default function HypertrophyTrackerApp() {
   const dayExercises = useMemo(() => exercises.filter((e) => e.day === selectedDay), [exercises, selectedDay]);
   const activeExercise = exercises.find((e) => e.id === activeExerciseId) || dayExercises[0] || exercises[0];
   const readinessScore = Math.round((readiness.sleep * 10 + (10 - readiness.soreness) * 10 + (10 - readiness.stress) * 10 + readiness.motivation * 10) / 4);
-  const rec = activeExercise ? recommendation(activeExercise, getLastSession(logs, activeExercise.id), weekNumber, readinessScore) : null;
+  const rec = activeExercise ? recommendation(activeExercise, lastSession, weekNumber, readinessScore, profile) : null;
 
   useEffect(() => {
     const first = exercises.find((e) => e.day === selectedDay);
     if (!first) return;
     setActiveExerciseId(first.id);
     setSessionIndex(0);
-    const suggested = recommendation(first, getLastSession(logs, first.id), weekNumber, readinessScore).weight;
+  const suggested = recommendation(first, getLastSession(logs, first.id), weekNumber, readinessScore, profile).weight;
     setSetInputs(emptySetData(first.sets, suggested || ""));
-  }, [selectedDay]);
+  }, [selectedDay, profile]);
   useEffect(() => {
     if (!activeExercise) return;
-    const suggested = recommendation(activeExercise, getLastSession(logs, activeExercise.id), weekNumber, readinessScore).weight;
+    const suggested = recommendation(activeExercise, getLastSession(logs, activeExercise.id), weekNumber, readinessScore, profile).weight;
     setSetInputs(emptySetData(activeExercise.sets, suggested || ""));
-  }, [activeExerciseId, weekNumber]);
+  }, [activeExerciseId, weekNumber, profile]);
 
   const weeklyLogs = logs.filter((l) => Number(l.weekNumber) === Number(weekNumber));
   const weeklyVolume = weeklyLogs.reduce((sum, l) => sum + sessionVolume(l), 0);
@@ -232,7 +402,7 @@ export default function HypertrophyTrackerApp() {
     const entry = { id: `${activeExercise.id}-${Date.now()}`, exerciseId: activeExercise.id, exerciseName: activeExercise.name, day: activeExercise.day, weekNumber, date: new Date().toISOString(), sets: cleanSets };
     const pr = detectPR(entry);
     setLogs([entry, ...logs]);
-    setSetInputs(emptySetData(activeExercise.sets, recommendation(activeExercise, entry, weekNumber, readinessScore).weight || ""));
+    setSetInputs(emptySetData(activeExercise.sets, recommendation(activeExercise, entry, weekNumber, readinessScore, profile).weight || ""));
     setRestSeconds(activeExercise.rest || 90);
     if (pr) { setCelebration(pr); haptic(80); }
   };
@@ -560,15 +730,225 @@ function Today() {
   function Library() {
     return <div className="space-y-5"><Header title="Library" subtitle={`${exercises.length} exercises`} /><Section title="Add Exercise"><div className={ui.group}><div className="space-y-3 p-4"><input value={newExercise.name} onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })} placeholder="Exercise name" className={ui.field} /><input value={newExercise.muscle} onChange={(e) => setNewExercise({ ...newExercise, muscle: e.target.value })} placeholder="Muscle group" className={ui.field} /><select value={newExercise.day} onChange={(e) => setNewExercise({ ...newExercise, day: e.target.value })} className={ui.field}>{days.map((day) => <option key={day}>{day}</option>)}</select><Button onClick={addExercise} className="flex min-h-[54px] w-full items-center justify-center rounded-[1.25rem] bg-[#1D1D1F] px-5 font-black text-white transition active:scale-[0.985]">Add Exercise</Button></div></div></Section><Section title="Exercises"><div className={ui.group}>{exercises.map((ex, i) => <div key={ex.id} className={`${i !== 0 ? ui.divider : ""} flex items-center gap-3 px-4 py-3.5`}><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F2F2F7] text-lg font-black text-[#007AFF]">{ex.icon}</div><div className="min-w-0"><p className="truncate font-black tracking-[-0.02em]">{ex.name}</p><p className="text-sm font-semibold text-[#6E6E73]">{ex.day} · {ex.muscle}</p></div></div>)}</div></Section></div>;
   }
-  function SettingsView() {
-    const rows = [
-      { label: "Sleep", key: "sleep", hint: "Higher is better", low: "Poor", high: "Excellent" },
-      { label: "Soreness", key: "soreness", hint: "Lower is better", low: "Fresh", high: "Smashed" },
-      { label: "Stress", key: "stress", hint: "Lower is better", low: "Calm", high: "High" },
-      { label: "Motivation", key: "motivation", hint: "Higher is better", low: "Low", high: "High" }
-    ];
-    return <div className="space-y-5"><Header title="Settings" subtitle="Recovery, profile, and app controls" /><div className={ui.group + " p-4 space-y-5"}><div className="rounded-[1.7rem] bg-[#1D1D1F] p-5 text-white shadow-[0_14px_36px_rgba(0,0,0,0.16)]"><div className="flex items-center justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">Readiness</p><p className="mt-1 text-[42px] font-black tracking-[-0.06em]">{readinessScore}%</p></div><div className="flex h-14 w-14 items-center justify-center rounded-[1.2rem] bg-white/10"><Zap className="h-7 w-7 text-[#FFD60A]" /></div></div><p className="mt-3 text-sm font-semibold leading-relaxed text-white/70">Used to adjust loading recommendations when fatigue is high.</p></div><div className="space-y-3">{rows.map((row) => <div key={row.key} className="rounded-[1.55rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"><div className="flex items-center justify-between gap-3"><div><p className="text-[17px] font-black tracking-[-0.03em]">{row.label}</p><p className="text-sm font-semibold text-[#6E6E73]">{row.hint}</p></div><div className="flex h-11 min-w-11 items-center justify-center rounded-full bg-white px-3 text-xl font-black tracking-[-0.04em] text-[#007AFF] shadow-sm">{readiness[row.key]}</div></div><input type="range" min="1" max="10" value={readiness[row.key]} onChange={(e) => { setReadiness({ ...readiness, [row.key]: Number(e.target.value) }); haptic(); }} className="mt-4 w-full accent-[#007AFF]" /><div className="mt-1 flex justify-between px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8E8E93]"><span>{row.low}</span><span>{row.high}</span></div></div>)}</div></div><div className={ui.group + " p-4 space-y-3"}><div><p className={ui.label}>Profile</p><p className="mt-1 text-sm font-semibold text-[#6E6E73]">Used for display and future programming logic.</p></div><input className={ui.field} value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Name" /><input className={ui.field} value={profile.goal} onChange={(e) => setProfile({ ...profile, goal: e.target.value })} placeholder="Goal" /><input className={ui.field} value={profile.experience} onChange={(e) => setProfile({ ...profile, experience: e.target.value })} placeholder="Experience level" /><input className={ui.field} value={profile.weakPoint} onChange={(e) => setProfile({ ...profile, weakPoint: e.target.value })} placeholder="Weak point" /></div><div className="rounded-[2rem] border border-[#FF3B30]/15 bg-[#FFF4F4] p-4 shadow-[0_18px_60px_rgba(255,59,48,0.08)]"><div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#FF3B30] shadow-sm"><RotateCcw className="h-5 w-5" /></div><div><p className="text-[18px] font-black tracking-[-0.03em]">Reset training data</p><p className="mt-1 text-sm font-semibold leading-relaxed text-[#6E6E73]">This clears your local logs from this device. There is currently no cloud backup.</p></div></div><button type="button" onClick={resetData} className="mt-4 flex min-h-[58px] w-full items-center justify-center rounded-[1.35rem] bg-[#FF3B30] px-5 text-[16px] font-black tracking-[-0.02em] text-white shadow-[0_10px_26px_rgba(255,59,48,0.24)] transition active:scale-[0.985]">Reset All Training Data</button></div></div>;
-  }
+function SettingsView() {
+  const rows = [
+    {
+      label: "Sleep",
+      key: "sleep",
+      hint: "Higher is better",
+      low: "Poor",
+      high: "Excellent"
+    },
+    {
+      label: "Soreness",
+      key: "soreness",
+      hint: "Lower is better",
+      low: "Fresh",
+      high: "Smashed"
+    },
+    {
+      label: "Stress",
+      key: "stress",
+      hint: "Lower is better",
+      low: "Calm",
+      high: "High"
+    },
+    {
+      label: "Motivation",
+      key: "motivation",
+      hint: "Higher is better",
+      low: "Low",
+      high: "High"
+    }
+  ];
 
+  return (
+    <div className="space-y-5">
+      <Header title="Settings" subtitle="Recovery, profile, and app controls" />
+
+      <div className={ui.group + " p-4 space-y-5"}>
+        <div className="rounded-[1.7rem] bg-[#1D1D1F] p-5 text-white shadow-[0_14px_36px_rgba(0,0,0,0.16)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">
+                Readiness
+              </p>
+              <p className="mt-1 text-[42px] font-black tracking-[-0.06em]">
+                {readinessScore}%
+              </p>
+            </div>
+
+            <div className="flex h-14 w-14 items-center justify-center rounded-[1.2rem] bg-white/10">
+              <Zap className="h-7 w-7 text-[#FFD60A]" />
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm font-semibold leading-relaxed text-white/70">
+            Used to adjust loading recommendations when fatigue is high.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {rows.map((row) => (
+            <div
+              key={row.key}
+              className="rounded-[1.55rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[17px] font-black tracking-[-0.03em]">
+                    {row.label}
+                  </p>
+                  <p className="text-sm font-semibold text-[#6E6E73]">
+                    {row.hint}
+                  </p>
+                </div>
+
+                <div className="flex h-11 min-w-11 items-center justify-center rounded-full bg-white px-3 text-xl font-black tracking-[-0.04em] text-[#007AFF] shadow-sm">
+                  {readiness[row.key]}
+                </div>
+              </div>
+
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={readiness[row.key]}
+                onChange={(e) => {
+                  setReadiness({ ...readiness, [row.key]: Number(e.target.value) });
+                  haptic();
+                }}
+                className="mt-4 w-full accent-[#007AFF]"
+              />
+
+              <div className="mt-1 flex justify-between px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8E8E93]">
+                <span>{row.low}</span>
+                <span>{row.high}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={ui.group + " p-4 space-y-4"}>
+        <div>
+          <p className={ui.label}>Training Profile</p>
+          <p className="mt-1 text-sm font-semibold text-[#6E6E73]">
+            These settings now change progression recommendations.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <input
+            className={ui.field}
+            value={profile.name}
+            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+            placeholder="Name"
+          />
+
+          <select
+            className={ui.field}
+            value={profile.goal}
+            onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
+          >
+            <option>Hypertrophy</option>
+            <option>Strength</option>
+            <option>Maintenance</option>
+            <option>Fat loss</option>
+          </select>
+
+          <select
+            className={ui.field}
+            value={profile.experience}
+            onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
+          >
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
+          </select>
+
+          <select
+            className={ui.field}
+            value={profile.progressionStyle}
+            onChange={(e) => setProfile({ ...profile, progressionStyle: e.target.value })}
+          >
+            <option>Conservative</option>
+            <option>Double progression</option>
+            <option>Aggressive</option>
+          </select>
+
+          <select
+            className={ui.field}
+            value={profile.frequency}
+            onChange={(e) => setProfile({ ...profile, frequency: Number(e.target.value) })}
+          >
+            <option value={3}>3 days/week</option>
+            <option value={4}>4 days/week</option>
+            <option value={5}>5 days/week</option>
+            <option value={6}>6 days/week</option>
+          </select>
+
+          <select
+            className={ui.field}
+            value={profile.deloadFrequency}
+            onChange={(e) => setProfile({ ...profile, deloadFrequency: Number(e.target.value) })}
+          >
+            <option value={4}>Deload every 4 weeks</option>
+            <option value={5}>Deload every 5 weeks</option>
+            <option value={6}>Deload every 6 weeks</option>
+            <option value={8}>Deload every 8 weeks</option>
+          </select>
+
+          <select
+            className={ui.field}
+            value={profile.priority || profile.weakPoint || ""}
+            onChange={(e) => setProfile({ ...profile, priority: e.target.value })}
+          >
+            <option>Upper chest / delts</option>
+            <option>Back / lats</option>
+            <option>Arms</option>
+            <option>Legs</option>
+            <option>Glutes</option>
+            <option>None</option>
+          </select>
+        </div>
+
+        <div className="rounded-[1.4rem] bg-[#F5F5F7] p-4">
+          <p className={ui.label}>Active logic</p>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6E6E73]">
+            Goal changes progression behaviour. Experience changes aggressiveness.
+            Priority muscles get slightly more favourable progression prompts.
+            Deload frequency controls when the app tells you to regulate.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-[2rem] border border-[#FF3B30]/15 bg-[#FFF4F4] p-4 shadow-[0_18px_60px_rgba(255,59,48,0.08)]">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#FF3B30] shadow-sm">
+            <RotateCcw className="h-5 w-5" />
+          </div>
+
+          <div>
+            <p className="text-[18px] font-black tracking-[-0.03em]">
+              Reset training data
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-relaxed text-[#6E6E73]">
+              This clears your local logs from this device. There is currently no cloud backup.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={resetData}
+          className="mt-4 flex min-h-[58px] w-full items-center justify-center rounded-[1.35rem] bg-[#FF3B30] px-5 text-[16px] font-black tracking-[-0.02em] text-white shadow-[0_10px_26px_rgba(255,59,48,0.24)] transition active:scale-[0.985]"
+        >
+          Reset All Training Data
+        </button>
+      </div>
+    </div>
+  );
+}
   return <div className={ui.page}><div className="pointer-events-none fixed inset-0 overflow-hidden"><div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.96),transparent_34%),radial-gradient(circle_at_top_right,rgba(0,122,255,0.08),transparent_28%)]" /></div><div className={ui.screen}><AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }}>{tab === "today" && <Today />}{tab === "progress" && <Progress />}{tab === "history" && <HistoryView />}{tab === "library" && <Library />}{tab === "settings" && <SettingsView />}</motion.div></AnimatePresence></div><AnimatePresence>{restSeconds > 0 && <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} className="fixed bottom-24 left-1/2 z-40 w-[92%] max-w-md -translate-x-1/2 rounded-[1.5rem] border border-black/[0.06] bg-[#1D1D1F]/95 p-3 text-white shadow-[0_20px_70px_rgba(0,0,0,0.28)] backdrop-blur-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10"><Timer className="h-5 w-5" /></div><div><p className="text-sm font-bold text-white/60">Rest Timer</p><p className="text-2xl font-black tracking-[-0.04em]">{formatTime(restSeconds)}</p></div></div><button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black" onClick={() => setRestSeconds(0)}>Skip</button></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#007AFF]" style={{ width: `${Math.min(100, (restSeconds / (activeExercise?.rest || 90)) * 100)}%` }} /></div></motion.div>}</AnimatePresence><AnimatePresence>{celebration && <motion.div initial={{ scale: 0.82, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="fixed left-1/2 top-24 z-50 w-[88%] max-w-sm -translate-x-1/2 rounded-[2rem] border border-[#FFD60A]/30 bg-white p-5 text-center shadow-[0_30px_90px_rgba(0,0,0,0.25)]"><Trophy className="mx-auto h-10 w-10 text-[#FF9500]" /><p className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-[#6E6E73]">New PR</p><p className="mt-1 text-2xl font-black tracking-[-0.04em]">{celebration}</p></motion.div>}</AnimatePresence><div className="fixed bottom-3 left-1/2 z-30 w-[94%] max-w-md -translate-x-1/2 rounded-[2rem] border border-black/[0.06] bg-white/90 p-2 shadow-[0_18px_60px_rgba(0,0,0,0.14)] backdrop-blur-2xl"><div className="grid grid-cols-5 gap-1">{nav.map((item) => { const Icon = item.icon; const active = tab === item.id; return <button key={item.id} onClick={() => { setTab(item.id); haptic(); }} className={`flex flex-col items-center justify-center gap-1 rounded-[1.35rem] py-2 text-[10px] font-black transition active:scale-95 ${active ? "bg-[#007AFF] text-white shadow-[0_8px_22px_rgba(0,122,255,0.22)]" : "text-[#6E6E73] hover:bg-[#F5F5F7]"}`}><Icon className="h-5 w-5" />{item.label}</button>; })}</div></div></div>;
 }
