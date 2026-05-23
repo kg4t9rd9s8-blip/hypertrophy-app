@@ -173,7 +173,7 @@ function formatTime(seconds) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function CompactStepper({ label, value, setValue, step = 1, min = 0, max = null, suffix = "" }) {
+function NativeValueControl({ label, value, setValue, step = 1, min = 0, max = null, suffix = "" }) {
   const n = Number(value) || 0;
 
   function decrease() {
@@ -190,24 +190,24 @@ function CompactStepper({ label, value, setValue, step = 1, min = 0, max = null,
   }
 
   return (
-    <div className="rounded-[1.2rem] border border-black/[0.05] bg-[#F5F5F7] p-2">
-      <p className="mb-1 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#8E8E93]">
+    <div className="min-w-0">
+      <p className="mb-1.5 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#8E8E93]">
         {label}
       </p>
 
-      <div className="flex items-center justify-between rounded-full bg-white px-1 py-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]">
+      <div className="grid grid-cols-[34px_1fr_34px] items-center rounded-[1.05rem] bg-[#F5F5F7] p-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.045)]">
         <button
           type="button"
           aria-label={`Decrease ${label}`}
           onClick={decrease}
-          className="flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95"
+          className="flex h-10 w-10 -translate-x-1 items-center justify-center rounded-full transition active:scale-90"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F2F7] text-[#007AFF]">
-            <Minus className="h-4 w-4" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#007AFF] shadow-sm">
+            <Minus className="h-3.5 w-3.5" />
           </span>
         </button>
 
-        <div className="min-w-[36px] text-center text-[18px] font-black tracking-[-0.04em] text-[#1D1D1F]">
+        <div className="text-center text-[19px] font-black tracking-[-0.04em] text-[#1D1D1F]">
           {value || 0}
           {suffix}
         </div>
@@ -216,10 +216,10 @@ function CompactStepper({ label, value, setValue, step = 1, min = 0, max = null,
           type="button"
           aria-label={`Increase ${label}`}
           onClick={increase}
-          className="flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95"
+          className="flex h-10 w-10 -translate-x-1 items-center justify-center rounded-full transition active:scale-90"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.20)]">
-            <Plus className="h-4 w-4" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.22)]">
+            <Plus className="h-3.5 w-3.5" />
           </span>
         </button>
       </div>
