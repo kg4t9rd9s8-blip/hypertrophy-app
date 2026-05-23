@@ -190,24 +190,24 @@ function CompactStepper({ label, value, setValue, step = 1, min = 0, max = null,
   }
 
   return (
-    <div className="rounded-[1.15rem] bg-[#F5F5F7] p-2">
+    <div className="rounded-[1.2rem] border border-black/[0.05] bg-[#F5F5F7] p-2">
       <p className="mb-1 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#8E8E93]">
         {label}
       </p>
 
-      <div className="flex h-12 items-center justify-between rounded-full bg-white px-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06),0_3px_10px_rgba(0,0,0,0.04)]">
+      <div className="flex items-center justify-between rounded-full bg-white px-1 py-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]">
         <button
           type="button"
           aria-label={`Decrease ${label}`}
           onClick={decrease}
-          className="group flex h-12 w-12 items-center justify-center rounded-full transition active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F2F7] text-[#007AFF] transition group-active:bg-[#EAF3FF]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F2F7] text-[#007AFF]">
             <Minus className="h-4 w-4" />
           </span>
         </button>
 
-        <div className="min-w-9 text-center text-[18px] font-black tracking-[-0.04em] text-[#1D1D1F]">
+        <div className="min-w-[36px] text-center text-[18px] font-black tracking-[-0.04em] text-[#1D1D1F]">
           {value || 0}
           {suffix}
         </div>
@@ -216,9 +216,9 @@ function CompactStepper({ label, value, setValue, step = 1, min = 0, max = null,
           type="button"
           aria-label={`Increase ${label}`}
           onClick={increase}
-          className="group flex h-12 w-12 items-center justify-center rounded-full transition active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.24)] transition group-active:bg-[#006FE6]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.20)]">
             <Plus className="h-4 w-4" />
           </span>
         </button>
@@ -424,9 +424,9 @@ function SetCards() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-end justify-between px-1">
         <div>
-          <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
+          <p className="text-[20px] font-black tracking-[-0.04em] text-[#1D1D1F]">
             Working Sets
           </p>
           <p className="text-sm font-semibold text-[#6E6E73]">
@@ -434,7 +434,7 @@ function SetCards() {
           </p>
         </div>
 
-        <div className="rounded-full bg-[#F5F5F7] px-3 py-1 text-xs font-black text-[#6E6E73]">
+        <div className="rounded-full bg-[#F2F2F7] px-3 py-1 text-xs font-black text-[#6E6E73]">
           {activeExercise?.targetMin}-{activeExercise?.targetMax} reps
         </div>
       </div>
@@ -443,16 +443,16 @@ function SetCards() {
         <motion.div
           layout
           key={i}
-          className={`overflow-hidden rounded-[1.55rem] border transition ${
+          className={`rounded-[1.6rem] border px-4 py-4 transition ${
             s.complete
-              ? "border-[#34C759]/25 bg-[#F0FBF4] shadow-[0_6px_18px_rgba(52,199,89,0.08)]"
-              : "border-black/[0.06] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.045)]"
+              ? "border-[#34C759]/20 bg-[#F4FBF6] shadow-[0_4px_14px_rgba(52,199,89,0.06)]"
+              : "border-black/[0.06] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.035)]"
           }`}
         >
-          <div className="flex items-center justify-between px-4 py-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black ${
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${
                   s.complete
                     ? "bg-[#34C759] text-white"
                     : "bg-[#F2F2F7] text-[#007AFF]"
@@ -462,11 +462,11 @@ function SetCards() {
               </div>
 
               <div>
-                <p className="text-[17px] font-black tracking-[-0.03em] text-[#1D1D1F]">
+                <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
                   Set {i + 1}
                 </p>
-                <p className="text-xs font-semibold text-[#6E6E73]">
-                  {s.complete ? "Logged" : "Set load, reps, and RIR"}
+                <p className="text-sm font-semibold text-[#6E6E73]">
+                  {s.complete ? "Logged" : "Adjust values and log"}
                 </p>
               </div>
             </div>
@@ -484,7 +484,7 @@ function SetCards() {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+          <div className="grid grid-cols-3 gap-2">
             <CompactStepper
               label="kg"
               value={s.weight}
@@ -628,22 +628,22 @@ function SetCards() {
           <div className={`rounded-[1.6rem] border p-5 ${recClass(rec?.tone)}`}><div className="flex items-center gap-2"><Target className="h-5 w-5" /><p className="text-sm font-black uppercase tracking-wide">Recommendation</p></div><p className="mt-2 text-3xl font-black leading-tight tracking-[-0.04em]">{rec?.label}</p><p className="mt-1 text-2xl font-black tracking-[-0.03em]">{rec?.weight ? `${rec.weight} kg` : "Choose load"}</p><p className="mt-2 text-sm font-semibold leading-snug opacity-90">{rec?.reason}</p></div>
           <SetCards />
 
-          <Button
-            onClick={saveSession}
-            className="group relative flex min-h-[72px] w-full items-center justify-center overflow-hidden rounded-[1.6rem] bg-[#007AFF] px-6 text-white shadow-[0_12px_32px_rgba(0,122,255,0.25)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10" />
+<Button
+  onClick={saveSession}
+  className="group relative flex min-h-[64px] w-full items-center justify-center overflow-hidden rounded-[1.5rem] bg-[#007AFF] px-5 text-white shadow-[0_10px_26px_rgba(0,122,255,0.22)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
+>
+  <div className="absolute inset-0 bg-gradient-to-b from-white/16 via-transparent to-black/8" />
 
-            <div className="relative flex items-center justify-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-5 w-5" />
-              </div>
+  <div className="relative flex items-center justify-center gap-3">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/18">
+      <Check className="h-5 w-5" />
+    </div>
 
-              <span className="text-[19px] font-black tracking-[-0.02em]">
-                Save Exercise
-              </span>
-            </div>
-          </Button>
+    <span className="text-[18px] font-black tracking-[-0.02em]">
+      Save Exercise
+    </span>
+  </div>
+</Button>
 
           <ProgressBlock compact />
         </CardContent></Card>
