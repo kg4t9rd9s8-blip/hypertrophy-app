@@ -1,47 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity,
-  BarChart3,
-  CalendarDays,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Dumbbell,
-  Flame,
-  History,
-  Home,
-  Minus,
-  Plus,
-  RotateCcw,
-  Settings,
-  Sparkles,
-  Target,
-  Timer,
-  Trash2,
-  TrendingUp,
-  Trophy,
-  Zap
+  BarChart3, CalendarDays, Check, ChevronDown, Dumbbell, History, Home,
+  Minus, Plus, RotateCcw, Settings, Sparkles, Target, Timer, Trash2,
+  TrendingUp, Trophy, Zap
 } from "lucide-react";
-import { Area, AreaChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area, AreaChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis
+} from "recharts";
 
-function Card({ className = "", children }) {
-  return <div className={className}>{children}</div>;
+function Button({ className = "", children, onClick, type = "button", disabled = false, ...props }) {
+  return <button type={type} onClick={onClick} disabled={disabled} className={className} {...props}>{children}</button>;
 }
 
-function CardContent({ className = "", children }) {
-  return <div className={className}>{children}</div>;
-}
-
-function Button({ className = "", children, onClick, type = "button", ...props }) {
-  return (
-    <button type={type} onClick={onClick} className={className} {...props}>
-      {children}
-    </button>
-  );
-}
-
-const STORAGE_KEY = "brandon_hypertrophy_ultra_v2";
+const STORAGE_KEY = "brandon_hypertrophy_native_v1";
 
 const defaultExercises = [
   { id: "flat-bench", day: "Push A", name: "Flat Barbell Bench Press", sets: 3, targetMin: 6, targetMax: 10, rirTarget: 1, increment: 2.5, muscle: "Chest", icon: "◐", rest: 150 },
@@ -82,15 +54,16 @@ const nav = [
 ];
 
 const ui = {
-  page: "min-h-screen bg-[#F5F5F7] px-4 py-5 pb-28 text-[#1D1D1F] antialiased selection:bg-[#007AFF] selection:text-white",
-  card: "rounded-[2rem] border border-black/[0.06] bg-white/90 shadow-[0_18px_60px_rgba(0,0,0,0.08)] backdrop-blur-2xl",
-  soft: "rounded-[1.45rem] border border-black/[0.05] bg-[#F5F5F7] shadow-inner shadow-black/[0.03]",
-  label: "text-[11px] font-bold uppercase tracking-[0.16em] text-[#6E6E73]",
-  sub: "text-[15px] font-medium leading-relaxed text-[#6E6E73]",
-  input: "w-full rounded-[1.15rem] border border-black/[0.08] bg-white p-3 text-center text-xl font-bold text-[#1D1D1F] shadow-sm outline-none transition focus:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/20",
-  field: "w-full rounded-[1.15rem] border border-black/[0.08] bg-white p-3 text-base font-semibold text-[#1D1D1F] shadow-sm outline-none placeholder:text-[#86868B] focus:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/20",
-  primary: "w-full rounded-[1.25rem] bg-[#007AFF] py-5 text-base font-bold text-white shadow-[0_10px_30px_rgba(0,122,255,0.24)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.98]",
-  ghost: "rounded-[1.25rem] border border-black/[0.06] bg-white font-bold text-[#1D1D1F] transition-all hover:bg-[#F5F5F7] active:scale-[0.98]"
+  page: "min-h-screen bg-[#F5F5F7] px-4 py-5 pb-28 text-[#1D1D1F] antialiased",
+  screen: "relative mx-auto max-w-md space-y-5",
+  title: "text-[36px] font-black tracking-[-0.045em] text-[#1D1D1F]",
+  sub: "text-[15px] font-semibold leading-relaxed text-[#6E6E73]",
+  label: "text-[11px] font-black uppercase tracking-[0.16em] text-[#8E8E93]",
+  group: "overflow-hidden rounded-[1.75rem] border border-black/[0.06] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.055)]",
+  divider: "border-t border-black/[0.06]",
+  field: "w-full rounded-[1.15rem] border border-black/[0.08] bg-white px-4 py-3 text-base font-semibold text-[#1D1D1F] shadow-sm outline-none placeholder:text-[#86868B] focus:border-[#007AFF]/40 focus:ring-4 focus:ring-[#007AFF]/20",
+  primary: "flex min-h-[58px] w-full items-center justify-center rounded-[1.35rem] bg-[#007AFF] px-5 text-[17px] font-black tracking-[-0.02em] text-white shadow-[0_10px_26px_rgba(0,122,255,0.22)] transition active:scale-[0.985]",
+  secondary: "flex min-h-[52px] items-center justify-center rounded-[1.25rem] bg-[#F2F2F7] px-4 text-[15px] font-black text-[#007AFF] transition active:scale-[0.985]"
 };
 
 function emptySetData(sets, weight = "") {
@@ -113,22 +86,16 @@ function haptic(ms = 8) {
 function getExerciseSessions(logs, exerciseId) {
   return logs.filter((l) => l.exerciseId === exerciseId).sort((a, b) => new Date(b.date) - new Date(a.date));
 }
-
-function getLastSession(logs, exerciseId) {
-  return getExerciseSessions(logs, exerciseId)[0];
-}
-
+function getLastSession(logs, exerciseId) { return getExerciseSessions(logs, exerciseId)[0]; }
 function bestWeightFromSession(session) {
   if (!session) return "";
   const weights = session.sets.map((s) => Number(s.weight)).filter((n) => Number.isFinite(n) && n > 0);
   return weights.length ? Math.max(...weights) : "";
 }
-
 function sessionVolume(session) {
   if (!session) return 0;
   return session.sets.reduce((sum, s) => sum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0);
 }
-
 function sessionStats(session, exercise) {
   if (!session) return null;
   const completed = session.sets.filter((s) => Number(s.weight) > 0 && Number(s.reps) > 0);
@@ -137,7 +104,6 @@ function sessionStats(session, exercise) {
   const rirs = completed.map((s) => Number(s.rir)).filter((n) => Number.isFinite(n));
   const avgRir = rirs.length ? rirs.reduce((a, b) => a + b, 0) / rirs.length : null;
   return {
-    completed: completed.length,
     allTopRange: reps.every((r) => r >= exercise.targetMax),
     belowMin: reps.some((r) => r < exercise.targetMin),
     tooHard: avgRir !== null && avgRir < 0.5,
@@ -161,81 +127,30 @@ function recommendation(exercise, lastSession, weekNumber, readiness) {
 }
 
 function recClass(tone) {
-  if (tone === "good") return "bg-[#E8F8EF] text-[#0A7A3D] border-[#B7E7C8]";
-  if (tone === "bad") return "bg-[#FFF0F0] text-[#B42318] border-[#FFD0D0]";
-  if (tone === "warning") return "bg-[#FFF7E6] text-[#9A5B00] border-[#FFE1A6]";
-  return "bg-[#EEF6FF] text-[#0057B8] border-[#BBD7FF]";
+  if (tone === "good") return "bg-[#EFFAF3] text-[#0A7A3D] border-[#BFE7CC]";
+  if (tone === "bad") return "bg-[#FFF2F1] text-[#B42318] border-[#FFD5D2]";
+  if (tone === "warning") return "bg-[#FFF8EA] text-[#9A5B00] border-[#FFE1A6]";
+  return "bg-[#EEF6FF] text-[#0057B8] border-[#C7DEFF]";
 }
+function formatTime(seconds) { return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`; }
 
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
+function Header({ title, subtitle, accessory }) {
+  return <div className="flex items-start justify-between gap-4"><div className="min-w-0"><h1 className={ui.title}>{title}</h1>{subtitle && <p className={ui.sub}>{subtitle}</p>}</div>{accessory}</div>;
 }
-
-function NativeValueControl({ label, value, setValue, step = 1, min = 0, max = null, suffix = "" }) {
+function Section({ title, subtitle, children }) {
+  return <section className="space-y-2.5"><div className="px-1"><h2 className="text-[22px] font-black tracking-[-0.045em]">{title}</h2>{subtitle && <p className="text-sm font-semibold text-[#6E6E73]">{subtitle}</p>}</div>{children}</section>;
+}
+function Metric({ label, value, icon: Icon, dark = false }) {
+  return <div className={`rounded-[1.45rem] p-4 ${dark ? "bg-[#1D1D1F] text-white shadow-[0_14px_36px_rgba(0,0,0,0.14)]" : "bg-white text-[#1D1D1F] shadow-[0_8px_24px_rgba(0,0,0,0.045)]"}`}><div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-black uppercase tracking-[0.16em] ${dark ? "text-white/50" : "text-[#8E8E93]"}`}>{label}</p>{Icon && <Icon className={`h-4 w-4 ${dark ? "text-[#FFD60A]" : "text-[#007AFF]"}`} />}</div><p className="mt-2 text-2xl font-black tracking-[-0.05em]">{value}</p></div>;
+}
+function WeekControl({ weekNumber, setWeekNumber }) {
+  return <div className="flex items-center gap-2 rounded-full bg-white p-1 shadow-sm"><button disabled={weekNumber <= 1} onClick={() => { setWeekNumber(Math.max(1, weekNumber - 1)); haptic(); }} className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${weekNumber <= 1 ? "bg-[#F2F2F7] text-[#C7C7CC]" : "bg-[#F2F2F7] text-[#007AFF]"}`}><Minus className="h-4 w-4" /></button><span className="min-w-8 text-center text-sm font-black">{weekNumber}</span><button onClick={() => { setWeekNumber(weekNumber + 1); haptic(); }} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#007AFF] text-white transition active:scale-95"><Plus className="h-4 w-4" /></button></div>;
+}
+function NativeValueControl({ label, value, setValue, step = 1, min = 0, max = null }) {
   const n = Number(value) || 0;
-
-  function decrease() {
-    const next = Math.max(min, roundToIncrement(n - step, step));
-    setValue(next);
-    haptic();
-  }
-
-  function increase() {
-    const raw = roundToIncrement(n + step, step);
-    const next = max !== null ? Math.min(max, raw) : raw;
-    setValue(next);
-    haptic();
-  }
-
-  return (
-    <div className="min-w-0">
-      <p className="mb-1.5 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#8E8E93]">
-        {label}
-      </p>
-
-      <div className="grid grid-cols-[34px_1fr_34px] items-center rounded-[1.05rem] bg-[#F5F5F7] p-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.045)]">
-        <button
-          type="button"
-          aria-label={`Decrease ${label}`}
-          onClick={decrease}
-          className="flex h-10 w-10 -translate-x-1 items-center justify-center rounded-full transition active:scale-90"
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#007AFF] shadow-sm">
-            <Minus className="h-3.5 w-3.5" />
-          </span>
-        </button>
-
-        <div className="text-center text-[19px] font-black tracking-[-0.04em] text-[#1D1D1F]">
-          {value || 0}
-          {suffix}
-        </div>
-
-        <button
-          type="button"
-          aria-label={`Increase ${label}`}
-          onClick={increase}
-          className="flex h-10 w-10 -translate-x-1 items-center justify-center rounded-full transition active:scale-90"
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.22)]">
-            <Plus className="h-3.5 w-3.5" />
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}
-function TinyMetric({ label, value, icon: Icon }) {
-  return (
-    <div className={ui.soft + " p-3.5"}>
-      <div className="flex items-center justify-between gap-2">
-        <p className={ui.label}>{label}</p>
-        {Icon && <Icon className="h-4 w-4 text-[#007AFF]" />}
-      </div>
-      <p className="mt-2 text-2xl font-black tracking-[-0.04em]">{value}</p>
-    </div>
-  );
+  const dec = () => { setValue(Math.max(min, roundToIncrement(n - step, step))); haptic(); };
+  const inc = () => { const raw = roundToIncrement(n + step, step); setValue(max !== null ? Math.min(max, raw) : raw); haptic(); };
+  return <div className="min-w-0"><p className="mb-1.5 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#8E8E93]">{label}</p><div className="grid grid-cols-[38px_1fr_38px] items-center rounded-[1.1rem] bg-[#F5F5F7] p-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.045)]"><button onClick={dec} className="flex h-11 w-11 -translate-x-1.5 items-center justify-center rounded-full transition active:scale-90"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#007AFF] shadow-sm"><Minus className="h-3.5 w-3.5" /></span></button><div className="text-center text-[18px] font-black tracking-[-0.04em]">{value || 0}</div><button onClick={inc} className="flex h-11 w-11 -translate-x-1.5 items-center justify-center rounded-full transition active:scale-90"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.22)]"><Plus className="h-3.5 w-3.5" /></span></button></div></div>;
 }
 
 export default function HypertrophyTrackerApp() {
@@ -256,52 +171,34 @@ export default function HypertrophyTrackerApp() {
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed.exercises) setExercises(parsed.exercises);
-        if (parsed.logs) setLogs(parsed.logs);
-        if (parsed.weekNumber) setWeekNumber(parsed.weekNumber);
-        if (parsed.selectedDay) setSelectedDay(parsed.selectedDay);
-        if (parsed.readiness) setReadiness(parsed.readiness);
-        if (parsed.profile) setProfile(parsed.profile);
-      } catch {}
-    }
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.exercises) setExercises(parsed.exercises);
+      if (parsed.logs) setLogs(parsed.logs);
+      if (parsed.weekNumber) setWeekNumber(parsed.weekNumber);
+      if (parsed.selectedDay) setSelectedDay(parsed.selectedDay);
+      if (parsed.readiness) setReadiness(parsed.readiness);
+      if (parsed.profile) setProfile(parsed.profile);
+    } catch {}
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ exercises, logs, weekNumber, selectedDay, readiness, profile }));
-  }, [exercises, logs, weekNumber, selectedDay, readiness, profile]);
-
-  useEffect(() => {
-    if (restSeconds <= 0) return;
-    const t = setTimeout(() => setRestSeconds((s) => Math.max(0, s - 1)), 1000);
-    if (restSeconds === 1) haptic(50);
-    return () => clearTimeout(t);
-  }, [restSeconds]);
-
-  useEffect(() => {
-    if (!celebration) return;
-    const t = setTimeout(() => setCelebration(null), 2300);
-    return () => clearTimeout(t);
-  }, [celebration]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify({ exercises, logs, weekNumber, selectedDay, readiness, profile })); }, [exercises, logs, weekNumber, selectedDay, readiness, profile]);
+  useEffect(() => { if (restSeconds <= 0) return; const t = setTimeout(() => setRestSeconds((s) => Math.max(0, s - 1)), 1000); if (restSeconds === 1) haptic(50); return () => clearTimeout(t); }, [restSeconds]);
+  useEffect(() => { if (!celebration) return; const t = setTimeout(() => setCelebration(null), 2300); return () => clearTimeout(t); }, [celebration]);
 
   const dayExercises = useMemo(() => exercises.filter((e) => e.day === selectedDay), [exercises, selectedDay]);
   const activeExercise = exercises.find((e) => e.id === activeExerciseId) || dayExercises[0] || exercises[0];
   const readinessScore = Math.round((readiness.sleep * 10 + (10 - readiness.soreness) * 10 + (10 - readiness.stress) * 10 + readiness.motivation * 10) / 4);
-  const lastSession = getLastSession(logs, activeExercise?.id);
-  const rec = activeExercise ? recommendation(activeExercise, lastSession, weekNumber, readinessScore) : null;
+  const rec = activeExercise ? recommendation(activeExercise, getLastSession(logs, activeExercise.id), weekNumber, readinessScore) : null;
 
   useEffect(() => {
     const first = exercises.find((e) => e.day === selectedDay);
-    if (first) {
-      setActiveExerciseId(first.id);
-      setSessionIndex(0);
-      const suggested = recommendation(first, getLastSession(logs, first.id), weekNumber, readinessScore).weight;
-      setSetInputs(emptySetData(first.sets, suggested || ""));
-    }
+    if (!first) return;
+    setActiveExerciseId(first.id);
+    setSessionIndex(0);
+    const suggested = recommendation(first, getLastSession(logs, first.id), weekNumber, readinessScore).weight;
+    setSetInputs(emptySetData(first.sets, suggested || ""));
   }, [selectedDay]);
-
   useEffect(() => {
     if (!activeExercise) return;
     const suggested = recommendation(activeExercise, getLastSession(logs, activeExercise.id), weekNumber, readinessScore).weight;
@@ -312,47 +209,13 @@ export default function HypertrophyTrackerApp() {
   const weeklyVolume = weeklyLogs.reduce((sum, l) => sum + sessionVolume(l), 0);
   const completedThisWeek = weeklyLogs.length;
   const todayCompletion = dayExercises.length ? Math.round((weeklyLogs.filter((l) => l.day === selectedDay).length / dayExercises.length) * 100) : 0;
+  const progressData = useMemo(() => activeExercise ? getExerciseSessions(logs, activeExercise.id).slice().reverse().map((s, i) => ({ session: i + 1, weight: bestWeightFromSession(s), volume: sessionVolume(s) })) : [], [logs, activeExercise]);
+  const volumeTrend = useMemo(() => Array.from({ length: Math.max(weekNumber, 6) }, (_, i) => i + 1).map((w) => ({ week: w, volume: logs.filter((l) => Number(l.weekNumber) === w).reduce((s, l) => s + sessionVolume(l), 0) })), [logs, weekNumber]);
+  const coachingInsight = readinessScore < 55 ? "Readiness is poor. Reduce load or total sets." : weekNumber % 6 === 0 ? "Deload week. Leave the ego at the door." : completedThisWeek < 3 ? "Priority: complete the planned sessions." : weeklyVolume > 0 ? "Momentum is building. Progress one variable at a time." : "Start the week. First goal is clean logging.";
 
-  const progressData = useMemo(() => {
-    if (!activeExercise) return [];
-    return getExerciseSessions(logs, activeExercise.id).slice().reverse().map((session, index) => ({
-      session: index + 1,
-      weight: bestWeightFromSession(session),
-      volume: sessionVolume(session)
-    }));
-  }, [logs, activeExercise]);
-
-  const volumeTrend = useMemo(() => {
-    const weeks = Array.from({ length: Math.max(weekNumber, 6) }, (_, i) => i + 1);
-    return weeks.map((w) => ({
-      week: w,
-      volume: logs.filter((l) => Number(l.weekNumber) === w).reduce((s, l) => s + sessionVolume(l), 0)
-    }));
-  }, [logs, weekNumber]);
-
-  const coachingInsight = useMemo(() => {
-    if (readinessScore < 55) return "Readiness is poor. Train, but reduce load or total sets. You do not grow by burying recovery.";
-    if (weekNumber % 6 === 0) return "Deload week. Do not be stupid. Leave the ego at the door and recover.";
-    if (completedThisWeek < 3) return "Priority: complete the planned sessions. Consistency beats heroic random sessions.";
-    if (weeklyVolume > 0) return "Momentum is building. Keep execution strict and progress one variable at a time.";
-    return "Start the week. First goal is clean logging, not maximal punishment.";
-  }, [readinessScore, weekNumber, completedThisWeek, weeklyVolume]);
-
-  function updateSet(index, key, value) {
-    const copy = [...setInputs];
-    copy[index] = { ...copy[index], [key]: value };
-    setSetInputs(copy);
-  }
-
-  function markSetComplete(index) {
-    const copy = [...setInputs];
-    copy[index] = { ...copy[index], complete: true };
-    setSetInputs(copy);
-    setRestSeconds(activeExercise?.rest || 90);
-    haptic(20);
-  }
-
-  function detectPR(entry) {
+  const updateSet = (index, key, value) => setSetInputs(setInputs.map((s, i) => i === index ? { ...s, [key]: value } : s));
+  const markSetComplete = (index) => { setSetInputs(setInputs.map((s, i) => i === index ? { ...s, complete: true } : s)); setRestSeconds(activeExercise?.rest || 90); haptic(20); };
+  const detectPR = (entry) => {
     const previous = getExerciseSessions(logs, entry.exerciseId);
     const previousBest = previous.length ? Math.max(...previous.map((s) => bestWeightFromSession(s) || 0)) : 0;
     const previousVol = previous.length ? Math.max(...previous.map((s) => sessionVolume(s))) : 0;
@@ -361,9 +224,8 @@ export default function HypertrophyTrackerApp() {
     if (best > previousBest && previousBest > 0) return `Load PR: ${best}kg`;
     if (vol > previousVol && previousVol > 0) return `Volume PR: ${Math.round(vol).toLocaleString()}kg`;
     return null;
-  }
-
-  function saveSession() {
+  };
+  const saveSession = () => {
     if (!activeExercise) return;
     const cleanSets = setInputs.map((s) => ({ weight: Number(s.weight) || "", reps: Number(s.reps) || "", rir: s.rir === "" ? "" : Number(s.rir) })).filter((s) => s.weight && s.reps);
     if (!cleanSets.length) return;
@@ -373,660 +235,54 @@ export default function HypertrophyTrackerApp() {
     setSetInputs(emptySetData(activeExercise.sets, recommendation(activeExercise, entry, weekNumber, readinessScore).weight || ""));
     setRestSeconds(activeExercise.rest || 90);
     if (pr) { setCelebration(pr); haptic(80); }
-  }
-
-  function nextExercise() {
-    const next = Math.min(dayExercises.length - 1, sessionIndex + 1);
-    setSessionIndex(next);
-    if (dayExercises[next]) setActiveExerciseId(dayExercises[next].id);
-    haptic();
-  }
-
-  function prevExercise() {
-    const prev = Math.max(0, sessionIndex - 1);
-    setSessionIndex(prev);
-    if (dayExercises[prev]) setActiveExerciseId(dayExercises[prev].id);
-    haptic();
-  }
-
-  function resetData() {
-    setLogs([]);
-    localStorage.removeItem(STORAGE_KEY);
-  }
-
-  function addExercise() {
+  };
+  const nextExercise = () => { const next = Math.min(dayExercises.length - 1, sessionIndex + 1); setSessionIndex(next); if (dayExercises[next]) setActiveExerciseId(dayExercises[next].id); haptic(); };
+  const prevExercise = () => { const prev = Math.max(0, sessionIndex - 1); setSessionIndex(prev); if (dayExercises[prev]) setActiveExerciseId(dayExercises[prev].id); haptic(); };
+  const resetData = () => { setLogs([]); localStorage.removeItem(STORAGE_KEY); };
+  const addExercise = () => {
     if (!newExercise.name.trim()) return;
     const id = newExercise.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + Date.now();
     setExercises([...exercises, { id, day: newExercise.day, name: newExercise.name, muscle: newExercise.muscle || "Custom", sets: 3, targetMin: 8, targetMax: 12, rirTarget: 1, increment: 2.5, icon: "•", rest: 90 }]);
     setNewExercise({ name: "", muscle: "", day: selectedDay });
-  }
+  };
 
   function ExerciseSelector() {
-    return (
-      <div>
-        <p className={ui.label}>Current exercise</p>
-        <div className="relative mt-1">
-          <select className="w-full appearance-none rounded-[1.35rem] border border-black/[0.06] bg-white px-4 py-4 pr-12 text-[17px] font-black tracking-[-0.02em] text-[#1D1D1F] shadow-[0_8px_24px_rgba(0,0,0,0.05)] outline-none transition focus:border-[#007AFF]/35 focus:ring-4 focus:ring-[#007AFF]/15" value={activeExercise?.id || ""} onChange={(e) => { const id = e.target.value; setActiveExerciseId(id); setSessionIndex(dayExercises.findIndex((x) => x.id === id)); haptic(); }}>
-            {dayExercises.map((exercise) => {
-              const lastWeight = bestWeightFromSession(getLastSession(logs, exercise.id));
-              return <option key={exercise.id} value={exercise.id}>{exercise.name}{lastWeight ? ` · ${lastWeight}kg` : ""}</option>;
-            })}
-          </select>
-          <div className="pointer-events-none absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#F5F5F7] text-[#007AFF]"><ChevronDown className="h-5 w-5" /></div>
-        </div>
-        <p className="mt-2 text-sm font-semibold text-[#6E6E73]">{activeExercise?.muscle} · {activeExercise?.targetMin}-{activeExercise?.targetMax} reps · RIR {activeExercise?.rirTarget}</p>
-      </div>
-    );
+    return <div className={ui.group}><div className="flex items-center justify-between gap-3 px-4 py-3.5"><div className="min-w-0"><p className={ui.label}>Current exercise</p><select className="mt-1 w-full appearance-none bg-transparent pr-8 text-[17px] font-black tracking-[-0.02em] outline-none" value={activeExercise?.id || ""} onChange={(e) => { const id = e.target.value; setActiveExerciseId(id); setSessionIndex(dayExercises.findIndex((x) => x.id === id)); haptic(); }}>{dayExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}{bestWeightFromSession(getLastSession(logs, ex.id)) ? ` · ${bestWeightFromSession(getLastSession(logs, ex.id))}kg` : ""}</option>)}</select></div><ChevronDown className="h-5 w-5 shrink-0 text-[#007AFF]" /></div><div className={ui.divider + " px-4 py-3"}><p className="text-sm font-semibold text-[#6E6E73]">{activeExercise?.muscle} · {activeExercise?.targetMin}-{activeExercise?.targetMax} reps · RIR {activeExercise?.rirTarget}</p></div></div>;
   }
-
-function SetCards() {
-  const completedCount = setInputs.filter((s) => s.complete).length;
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-end justify-between px-1">
-        <div>
-          <p className="text-[21px] font-black tracking-[-0.045em] text-[#1D1D1F]">
-            Sets
-          </p>
-          <p className="text-sm font-semibold text-[#6E6E73]">
-            {completedCount}/{setInputs.length} logged
-          </p>
-        </div>
-
-        <div className="rounded-full bg-[#F2F2F7] px-3 py-1.5 text-xs font-black tracking-[-0.01em] text-[#6E6E73]">
-          {activeExercise?.targetMin}-{activeExercise?.targetMax} reps
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-[1.75rem] border border-black/[0.06] bg-white shadow-[0_10px_32px_rgba(0,0,0,0.055)]">
-        {setInputs.map((s, i) => (
-          <motion.div
-            layout
-            key={i}
-            className={`px-4 py-4 transition ${
-              i !== 0 ? "border-t border-black/[0.06]" : ""
-            } ${s.complete ? "bg-[#F5FFF8]" : "bg-white"}`}
-          >
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <div
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
-                    s.complete
-                      ? "bg-[#34C759] text-white"
-                      : "bg-[#F2F2F7] text-[#007AFF]"
-                  }`}
-                >
-                  {s.complete ? <Check className="h-4 w-4" /> : i + 1}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-[17px] font-black tracking-[-0.035em] text-[#1D1D1F]">
-                    Set {i + 1}
-                  </p>
-                  <p className="text-xs font-semibold text-[#8E8E93]">
-                    {s.complete ? "Logged" : "Tap values, then log"}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => markSetComplete(i)}
-                className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 ${
-                  s.complete
-                    ? "bg-[#34C759] text-white"
-                    : "bg-[#F2F2F7] text-[#007AFF]"
-                }`}
-              >
-                {s.complete ? "Done" : "Log"}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <NativeValueControl
-                label="kg"
-                value={s.weight}
-                setValue={(v) => updateSet(i, "weight", v)}
-                step={activeExercise?.increment || 2.5}
-              />
-
-              <NativeValueControl
-                label="reps"
-                value={s.reps}
-                setValue={(v) => updateSet(i, "reps", v)}
-                step={1}
-              />
-
-              <NativeValueControl
-                label="RIR"
-                value={s.rir}
-                setValue={(v) => updateSet(i, "rir", v)}
-                step={1}
-                max={5}
-              />
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-}
+  function SetCards() {
+    const completedCount = setInputs.filter((s) => s.complete).length;
+    return <Section title="Sets" subtitle={`${completedCount}/${setInputs.length} logged · ${activeExercise?.targetMin}-${activeExercise?.targetMax} reps`}><div className={ui.group}>{setInputs.map((s, i) => <motion.div layout key={i} className={`${i !== 0 ? ui.divider : ""} px-4 py-4 ${s.complete ? "bg-[#F5FFF8]" : "bg-white"}`}><div className="mb-3 flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${s.complete ? "bg-[#34C759] text-white" : "bg-[#F2F2F7] text-[#007AFF]"}`}>{s.complete ? <Check className="h-4 w-4" /> : i + 1}</div><div className="min-w-0"><p className="text-[17px] font-black tracking-[-0.035em]">Set {i + 1}</p><p className="text-xs font-semibold text-[#8E8E93]">{s.complete ? "Logged" : "Tap values, then log"}</p></div></div><button onClick={() => markSetComplete(i)} className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 ${s.complete ? "bg-[#34C759] text-white" : "bg-[#F2F2F7] text-[#007AFF]"}`}>{s.complete ? "Done" : "Log"}</button></div><div className="grid grid-cols-3 gap-2"><NativeValueControl label="kg" value={s.weight} setValue={(v) => updateSet(i, "weight", v)} step={activeExercise?.increment || 2.5} /><NativeValueControl label="reps" value={s.reps} setValue={(v) => updateSet(i, "reps", v)} step={1} /><NativeValueControl label="RIR" value={s.rir} setValue={(v) => updateSet(i, "rir", v)} step={1} max={5} /></div></motion.div>)}</div></Section>;
+  }
   function ProgressBlock({ compact = false }) {
     const hasData = progressData.length > 0;
-    return (
-      <div className="space-y-4 rounded-[1.8rem] border border-black/[0.06] bg-[#F5F5F7] p-5 shadow-inner shadow-black/[0.03]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-[#007AFF]" /><div><p className="text-lg font-black tracking-[-0.02em]">Exercise Progress</p><p className={ui.sub}>Selected exercise trend</p></div></div>
-          <div className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#6E6E73] shadow-sm">{progressData.length} logged</div>
-        </div>
-        {!hasData ? (
-          <div className="rounded-[1.5rem] border border-dashed border-black/[0.12] bg-white p-6 text-center"><BarChart3 className="mx-auto h-8 w-8 text-[#007AFF]" /><p className="mt-3 text-lg font-black tracking-[-0.02em]">No progress data yet</p><p className="mt-1 text-sm font-medium leading-relaxed text-[#6E6E73]">Log this exercise once and the app will build your trend.</p></div>
-        ) : (
-          <>
-            <div className="grid grid-cols-3 gap-2">
-              <TinyMetric label="Best" value={`${Math.max(...progressData.map((d) => Number(d.weight) || 0))}kg`} />
-              <TinyMetric label="Peak Vol" value={Math.max(...progressData.map((d) => Number(d.volume) || 0)).toLocaleString()} />
-              <TinyMetric label="Sessions" value={progressData.length} />
-            </div>
-            <div className={`${compact ? "h-52" : "h-72"} w-full rounded-[1.5rem] border border-black/[0.06] bg-white p-3`}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={progressData}>
-                  <defs><linearGradient id="weightFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#007AFF" stopOpacity={0.25}/><stop offset="95%" stopColor="#007AFF" stopOpacity={0}/></linearGradient></defs>
-                  <XAxis dataKey="session" stroke="#86868B" tick={{ fill: "#6E6E73", fontSize: 12, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                  <YAxis stroke="#86868B" tick={{ fill: "#6E6E73", fontSize: 12, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "18px", color: "#1D1D1F", fontWeight: 700 }} />
-                  <Area type="monotone" dataKey="weight" stroke="#007AFF" strokeWidth={4} fill="url(#weightFill)" dot={{ r: 4, fill: "#007AFF" }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="rounded-[1.25rem] border border-black/[0.06] bg-white p-4"><p className={ui.label}>Analysis</p><p className="mt-2 text-base font-semibold leading-relaxed">{progressData.length < 3 ? "More data needed before the trend means anything." : Number(progressData.at(-1).weight) > Number(progressData[0].weight) ? "Performance is trending up. Productive progression." : "Progress has stalled. Recovery, execution, or load selection needs fixing."}</p></div>
-          </>
-        )}
-      </div>
-    );
+    return <Section title="Exercise Progress" subtitle="Selected exercise trend"><div className={ui.group}>{!hasData ? <div className="px-5 py-8 text-center"><BarChart3 className="mx-auto h-8 w-8 text-[#007AFF]" /><p className="mt-3 text-lg font-black tracking-[-0.02em]">No progress data yet</p><p className="mt-1 text-sm font-semibold text-[#6E6E73]">Log this exercise once and the app will build your trend.</p></div> : <><div className="grid grid-cols-3 gap-2 p-3"><Metric label="Best" value={`${Math.max(...progressData.map((d) => Number(d.weight) || 0))}kg`} /><Metric label="Peak Vol" value={Math.max(...progressData.map((d) => Number(d.volume) || 0)).toLocaleString()} /><Metric label="Sessions" value={progressData.length} /></div><div className={`${ui.divider} ${compact ? "h-52" : "h-72"} p-3`}><ResponsiveContainer width="100%" height="100%"><AreaChart data={progressData}><defs><linearGradient id="weightFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#007AFF" stopOpacity={0.22} /><stop offset="95%" stopColor="#007AFF" stopOpacity={0} /></linearGradient></defs><XAxis dataKey="session" stroke="#8E8E93" tick={{ fill: "#6E6E73", fontSize: 12, fontWeight: 700 }} axisLine={false} tickLine={false} /><YAxis stroke="#8E8E93" tick={{ fill: "#6E6E73", fontSize: 12, fontWeight: 700 }} axisLine={false} tickLine={false} /><Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "18px", color: "#1D1D1F", fontWeight: 700 }} /><Area type="monotone" dataKey="weight" stroke="#007AFF" strokeWidth={4} fill="url(#weightFill)" dot={{ r: 4, fill: "#007AFF" }} /></AreaChart></ResponsiveContainer></div></>}</div></Section>;
+  }
+  function RecommendationCard() {
+    return <div className={`rounded-[1.55rem] border px-4 py-4 ${recClass(rec?.tone)}`}><div className="flex items-center justify-between gap-3"><div><p className="text-[11px] font-black uppercase tracking-[0.16em] opacity-70">Recommendation</p><p className="mt-1 text-[28px] font-black leading-tight tracking-[-0.05em]">{rec?.label}</p></div><Target className="h-6 w-6 opacity-80" /></div><p className="mt-1 text-[22px] font-black tracking-[-0.04em]">{rec?.weight ? `${rec.weight} kg` : "Choose load"}</p><p className="mt-2 text-sm font-semibold leading-snug opacity-90">{rec?.reason}</p></div>;
   }
 
   function Today() {
-    return (
-      <div className="space-y-5">
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between gap-4">
-            <div><div className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6E6E73] shadow-sm backdrop-blur-xl"><Flame className="h-3.5 w-3.5 text-[#FF9500]" /> Brandon Fitness</div><h1 className="mt-3 text-[36px] font-black tracking-[-0.045em]">Today</h1><p className={ui.sub}>{selectedDay} · {profile.goal} · {profile.experience}</p></div>
-            <div className="rounded-[1.35rem] bg-[#1D1D1F] p-3 text-white shadow-[0_12px_30px_rgba(0,0,0,0.16)]"><Dumbbell className="h-7 w-7" /></div>
-          </div>
-        </motion.div>
-
-        <Card className={ui.card}><CardContent className="space-y-4 p-4">
-          <div className="grid grid-cols-3 gap-2">
-  <div className={ui.soft + " p-3.5"}>
-    <div className="flex items-center justify-between gap-2">
-      <p className={ui.label}>Week</p>
-      <CalendarDays className="h-4 w-4 text-[#007AFF]" />
-    </div>
-
-    <div className="mt-2 flex items-center justify-between gap-2">
-      <button
-        type="button"
-        disabled={weekNumber <= 1}
-        onClick={() => {
-          setWeekNumber(Math.max(1, weekNumber - 1));
-          haptic();
-        }}
-        className={`flex h-9 w-9 items-center justify-center rounded-full font-black transition active:scale-95 ${
-          weekNumber <= 1
-            ? "bg-[#E5E5EA] text-[#AEAEB2]"
-            : "bg-white text-[#007AFF] shadow-sm"
-        }`}
-      >
-        <Minus className="h-4 w-4" />
-      </button>
-
-      <p className="text-2xl font-black tracking-[-0.04em]">{weekNumber}</p>
-
-      <button
-        type="button"
-        onClick={() => {
-          setWeekNumber(weekNumber + 1);
-          haptic();
-        }}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-[#007AFF] font-black text-white shadow-sm transition active:scale-95"
-      >
-        <Plus className="h-4 w-4" />
-      </button>
-    </div>
-  </div>
-
-  <TinyMetric label="Ready" value={`${readinessScore}%`} icon={Zap} />
-  <TinyMetric label="Done" value={`${todayCompletion}%`} icon={Check} />
-</div>
-<div className="grid grid-cols-1 gap-2">
-  <Button
-    className="group relative flex h-24 w-full items-center justify-center overflow-hidden rounded-[1.7rem] bg-[#007AFF] px-6 text-white shadow-[0_14px_36px_rgba(0,122,255,0.28)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
-    onClick={() => setSessionMode(!sessionMode)}
-  >
-    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10" />
-
-    <div className="relative flex items-center justify-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
-        <Sparkles className="h-5 w-5" />
-      </div>
-
-      <span className="text-[20px] font-black tracking-[-0.02em]">
-        {sessionMode ? "Exit Session" : "Start Session"}
-      </span>
-    </div>
-  </Button>
-</div>
-        </CardContent></Card>
-
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">{days.map((d) => <button key={d} onClick={() => { setSelectedDay(d); haptic(); }} className={`whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] ${selectedDay === d ? "border-[#1D1D1F] bg-[#1D1D1F] text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)]" : "border-black/[0.06] bg-white/80 text-[#1D1D1F] hover:bg-white"}`}>{d}</button>)}</div>
-
-        <Card className={ui.card}><CardContent className="space-y-4 p-4">
-          {sessionMode && <div className="flex items-center justify-between rounded-[1.4rem] bg-[#F5F5F7] p-2"><button className="rounded-full bg-white px-4 py-2 text-sm font-bold" onClick={prevExercise}>Previous</button><p className="text-sm font-black text-[#6E6E73]">{sessionIndex + 1} / {dayExercises.length}</p><button className="rounded-full bg-[#007AFF] px-4 py-2 text-sm font-bold text-white" onClick={nextExercise}>Next</button></div>}
-          <ExerciseSelector />
-          <div className={`rounded-[1.6rem] border p-5 ${recClass(rec?.tone)}`}><div className="flex items-center gap-2"><Target className="h-5 w-5" /><p className="text-sm font-black uppercase tracking-wide">Recommendation</p></div><p className="mt-2 text-3xl font-black leading-tight tracking-[-0.04em]">{rec?.label}</p><p className="mt-1 text-2xl font-black tracking-[-0.03em]">{rec?.weight ? `${rec.weight} kg` : "Choose load"}</p><p className="mt-2 text-sm font-semibold leading-snug opacity-90">{rec?.reason}</p></div>
-          <SetCards />
-
-<Button
-  onClick={saveSession}
-  className="group relative flex min-h-[62px] w-full items-center justify-center overflow-hidden rounded-[1.45rem] bg-[#007AFF] px-5 text-white shadow-[0_10px_26px_rgba(0,122,255,0.22)] transition active:scale-[0.985]"
->
-  <div className="absolute inset-0 bg-gradient-to-b from-white/18 via-transparent to-black/10" />
-
-  <div className="relative flex items-center justify-center gap-3">
-    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/18">
-      <Check className="h-4 w-4" />
-    </div>
-
-    <span className="text-[18px] font-black tracking-[-0.025em]">
-      Save Exercise
-    </span>
-  </div>
-</Button>
-
-          <ProgressBlock compact />
-        </CardContent></Card>
-      </div>
-    );
+    return <div className="space-y-5"><Header title="Today" subtitle={`${selectedDay} · ${profile.goal} · ${profile.experience}`} accessory={<div className="rounded-[1.25rem] bg-[#1D1D1F] p-3 text-white shadow-[0_12px_30px_rgba(0,0,0,0.16)]"><Dumbbell className="h-7 w-7" /></div>} /><div className="grid grid-cols-3 gap-2"><Metric label="Week" value={weekNumber} icon={CalendarDays} /><Metric label="Ready" value={`${readinessScore}%`} icon={Zap} dark /><Metric label="Done" value={`${todayCompletion}%`} icon={Check} /></div><div className={ui.group}><div className="px-4 py-3.5"><p className={ui.label}>Coach</p><p className="mt-1 text-base font-black leading-tight tracking-[-0.02em]">{coachingInsight}</p></div><div className={ui.divider + " grid grid-cols-2 gap-2 p-3"}><Button className={ui.primary} onClick={() => { setSessionMode(!sessionMode); haptic(15); }}><Sparkles className="mr-2 h-5 w-5" />{sessionMode ? "Exit" : "Start"}</Button><div className="flex items-center justify-center rounded-[1.35rem] bg-[#F2F2F7]"><WeekControl weekNumber={weekNumber} setWeekNumber={setWeekNumber} /></div></div></div><div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">{days.map((day) => <button key={day} onClick={() => { setSelectedDay(day); haptic(); }} className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-black transition active:scale-[0.98] ${selectedDay === day ? "bg-[#1D1D1F] text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)]" : "bg-white text-[#1D1D1F] shadow-sm"}`}>{day}</button>)}</div>{sessionMode && <div className={ui.group}><div className="grid grid-cols-3 items-center gap-2 p-2"><button className={ui.secondary} onClick={prevExercise}>Previous</button><p className="text-center text-sm font-black text-[#6E6E73]">{sessionIndex + 1}/{dayExercises.length}</p><button className={ui.primary + " min-h-[52px] text-[15px]"} onClick={nextExercise}>Next</button></div></div>}<Section title="Training"><ExerciseSelector /></Section><RecommendationCard /><SetCards /><Button onClick={saveSession} className={ui.primary}><Check className="mr-2 h-5 w-5" />Save Exercise</Button><ProgressBlock compact /></div>;
   }
-
   function Progress() {
-      return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[36px] font-black tracking-[-0.045em]">Progress</h1>
-          <p className={ui.sub}>Week {weekNumber} training data</p>
-        </div>
-
-        <div className="flex items-center gap-2 rounded-full bg-white p-1 shadow-sm">
-          <button
-            type="button"
-            disabled={weekNumber <= 1}
-            onClick={() => {
-              setWeekNumber(Math.max(1, weekNumber - 1));
-              haptic();
-            }}
-            className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${
-              weekNumber <= 1
-                ? "bg-[#F2F2F7] text-[#C7C7CC]"
-                : "bg-[#F2F2F7] text-[#007AFF]"
-            }`}
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-
-          <span className="min-w-8 text-center text-sm font-black">{weekNumber}</span>
-
-          <button
-            type="button"
-            onClick={() => {
-              setWeekNumber(weekNumber + 1);
-              haptic();
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#007AFF] text-white transition active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <Card className={ui.card}>
-        <CardContent className="space-y-4 p-4">
-          <ExerciseSelector />
-          <ProgressBlock />
-        </CardContent>
-      </Card>
-
-      <Card className={ui.card}>
-        <CardContent className="space-y-4 p-4">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-[#007AFF]" />
-            <h2 className="text-lg font-black tracking-[-0.02em]">Weekly Volume</h2>
-          </div>
-
-          <div className="h-64 rounded-[1.5rem] bg-white p-3">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={volumeTrend}>
-                <XAxis
-                  dataKey="week"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#6E6E73", fontWeight: 700 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#6E6E73", fontWeight: 700 }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#FFFFFF",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    borderRadius: "18px",
-                    fontWeight: 700
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="volume"
-                  stroke="#1D1D1F"
-                  strokeWidth={4}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+    return <div className="space-y-5"><Header title="Progress" subtitle={`Week ${weekNumber} training data`} accessory={<WeekControl weekNumber={weekNumber} setWeekNumber={setWeekNumber} />} /><Section title="Exercise"><ExerciseSelector /></Section><ProgressBlock /><Section title="Weekly Volume"><div className={ui.group}><div className="h-64 p-3"><ResponsiveContainer width="100%" height="100%"><LineChart data={volumeTrend}><XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: "#6E6E73", fontWeight: 700 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#6E6E73", fontWeight: 700 }} /><Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "18px", fontWeight: 700 }} /><Line type="monotone" dataKey="volume" stroke="#1D1D1F" strokeWidth={4} dot={false} /></LineChart></ResponsiveContainer></div></div></Section></div>;
+  }
   function HistoryView() {
-  const visibleLogs = logs.filter((l) => Number(l.weekNumber) === Number(weekNumber));
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[36px] font-black tracking-[-0.045em]">History</h1>
-          <p className={ui.sub}>Viewing Week {weekNumber}</p>
-        </div>
-
-        <div className="flex items-center gap-2 rounded-full bg-white p-1 shadow-sm">
-          <button
-            type="button"
-            disabled={weekNumber <= 1}
-            onClick={() => {
-              setWeekNumber(Math.max(1, weekNumber - 1));
-              haptic();
-            }}
-            className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${
-              weekNumber <= 1
-                ? "bg-[#F2F2F7] text-[#C7C7CC]"
-                : "bg-[#F2F2F7] text-[#007AFF]"
-            }`}
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-
-          <span className="min-w-8 text-center text-sm font-black">{weekNumber}</span>
-
-          <button
-            type="button"
-            onClick={() => {
-              setWeekNumber(weekNumber + 1);
-              haptic();
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#007AFF] text-white transition active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <Card className={ui.card}>
-        <CardContent className="space-y-3 p-4">
-          {visibleLogs.length === 0 && (
-            <p className="rounded-[1.25rem] bg-[#F5F5F7] p-4 text-sm font-semibold text-[#6E6E73]">
-              No sessions logged for Week {weekNumber}.
-            </p>
-          )}
-
-          {visibleLogs.map((l) => (
-            <div
-              key={l.id}
-              className="rounded-[1.6rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"
-            >
-              <div className="flex justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-black leading-tight tracking-[-0.02em]">{l.exerciseName}</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#6E6E73]">
-                    Week {l.weekNumber} · {new Date(l.date).toLocaleDateString()}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setLogs(logs.filter((x) => x.id !== l.id))}
-                  className="rounded-xl p-2 text-[#6E6E73] hover:bg-white hover:text-[#FF3B30]"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-
-              <p className="mt-3 rounded-[1.2rem] bg-white p-3 text-sm font-bold leading-snug">
-                <BarChart3 className="mr-1 inline h-4 w-4 text-[#007AFF]" />
-                Volume: {Math.round(sessionVolume(l)).toLocaleString()} kg
-                <br />
-                <span className="text-[#6E6E73]">
-                  {l.sets.map((s) => `${s.weight || "?"}×${s.reps || "?"}`).join(" / ")}
-                </span>
-              </p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
+    const visibleLogs = logs.filter((l) => Number(l.weekNumber) === Number(weekNumber));
+    return <div className="space-y-5"><Header title="History" subtitle={`Viewing Week ${weekNumber}`} accessory={<WeekControl weekNumber={weekNumber} setWeekNumber={setWeekNumber} />} /><div className={ui.group}>{visibleLogs.length === 0 && <div className="px-4 py-8 text-center"><History className="mx-auto h-8 w-8 text-[#007AFF]" /><p className="mt-3 text-lg font-black tracking-[-0.03em]">No sessions logged</p><p className="mt-1 text-sm font-semibold text-[#6E6E73]">Week {weekNumber} has no saved exercises yet.</p></div>}{visibleLogs.map((log, index) => <div key={log.id} className={`${index !== 0 ? ui.divider : ""} px-4 py-4`}><div className="flex justify-between gap-3"><div className="min-w-0"><p className="font-black leading-tight tracking-[-0.02em]">{log.exerciseName}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#8E8E93]">Week {log.weekNumber} · {new Date(log.date).toLocaleDateString()}</p></div><button onClick={() => setLogs(logs.filter((x) => x.id !== log.id))} className="rounded-full p-2 text-[#8E8E93] transition hover:bg-[#FFF0F0] hover:text-[#FF3B30]"><Trash2 className="h-4 w-4" /></button></div><div className="mt-3 rounded-[1.2rem] bg-[#F5F5F7] p-3"><p className="text-sm font-black">Volume: {Math.round(sessionVolume(log)).toLocaleString()} kg</p><p className="mt-1 text-sm font-semibold text-[#6E6E73]">{log.sets.map((set) => `${set.weight || "?"}×${set.reps || "?"}`).join(" / ")}</p></div></div>)}</div></div>;
+  }
   function Library() {
-    return <div className="space-y-5"><h1 className="text-[36px] font-black tracking-[-0.045em]">Library</h1><Card className={ui.card}><CardContent className="space-y-3 p-4"><div className="flex items-center gap-2"><Plus className="h-5 w-5 text-[#007AFF]" /><h2 className="text-lg font-black tracking-[-0.02em]">Add Exercise</h2></div><input value={newExercise.name} onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })} placeholder="Exercise name" className={ui.field} /><input value={newExercise.muscle} onChange={(e) => setNewExercise({ ...newExercise, muscle: e.target.value })} placeholder="Muscle group" className={ui.field} /><select value={newExercise.day} onChange={(e) => setNewExercise({ ...newExercise, day: e.target.value })} className={ui.field}>{days.map((d) => <option key={d}>{d}</option>)}</select><Button onClick={addExercise} className="w-full rounded-[1.25rem] bg-[#1D1D1F] py-5 font-bold text-white hover:bg-black">Add exercise</Button></CardContent></Card><Card className={ui.card}><CardContent className="space-y-2 p-4">{exercises.map((e) => <div key={e.id} className="flex items-center justify-between rounded-[1.4rem] bg-[#F5F5F7] p-3"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-black text-[#007AFF]">{e.icon}</div><div><p className="font-black tracking-[-0.02em]">{e.name}</p><p className="text-sm font-semibold text-[#6E6E73]">{e.day} · {e.muscle}</p></div></div><ChevronRight className="h-5 w-5 text-[#C7C7CC]" /></div>)}</CardContent></Card></div>;
+    return <div className="space-y-5"><Header title="Library" subtitle={`${exercises.length} exercises`} /><Section title="Add Exercise"><div className={ui.group}><div className="space-y-3 p-4"><input value={newExercise.name} onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })} placeholder="Exercise name" className={ui.field} /><input value={newExercise.muscle} onChange={(e) => setNewExercise({ ...newExercise, muscle: e.target.value })} placeholder="Muscle group" className={ui.field} /><select value={newExercise.day} onChange={(e) => setNewExercise({ ...newExercise, day: e.target.value })} className={ui.field}>{days.map((day) => <option key={day}>{day}</option>)}</select><Button onClick={addExercise} className="flex min-h-[54px] w-full items-center justify-center rounded-[1.25rem] bg-[#1D1D1F] px-5 font-black text-white transition active:scale-[0.985]">Add Exercise</Button></div></div></Section><Section title="Exercises"><div className={ui.group}>{exercises.map((ex, i) => <div key={ex.id} className={`${i !== 0 ? ui.divider : ""} flex items-center gap-3 px-4 py-3.5`}><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F2F2F7] text-lg font-black text-[#007AFF]">{ex.icon}</div><div className="min-w-0"><p className="truncate font-black tracking-[-0.02em]">{ex.name}</p><p className="text-sm font-semibold text-[#6E6E73]">{ex.day} · {ex.muscle}</p></div></div>)}</div></Section></div>;
+  }
+  function SettingsView() {
+    const rows = [
+      { label: "Sleep", key: "sleep", hint: "Higher is better", low: "Poor", high: "Excellent" },
+      { label: "Soreness", key: "soreness", hint: "Lower is better", low: "Fresh", high: "Smashed" },
+      { label: "Stress", key: "stress", hint: "Lower is better", low: "Calm", high: "High" },
+      { label: "Motivation", key: "motivation", hint: "Higher is better", low: "Low", high: "High" }
+    ];
+    return <div className="space-y-5"><Header title="Settings" subtitle="Recovery, profile, and app controls" /><div className={ui.group + " p-4 space-y-5"}><div className="rounded-[1.7rem] bg-[#1D1D1F] p-5 text-white shadow-[0_14px_36px_rgba(0,0,0,0.16)]"><div className="flex items-center justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">Readiness</p><p className="mt-1 text-[42px] font-black tracking-[-0.06em]">{readinessScore}%</p></div><div className="flex h-14 w-14 items-center justify-center rounded-[1.2rem] bg-white/10"><Zap className="h-7 w-7 text-[#FFD60A]" /></div></div><p className="mt-3 text-sm font-semibold leading-relaxed text-white/70">Used to adjust loading recommendations when fatigue is high.</p></div><div className="space-y-3">{rows.map((row) => <div key={row.key} className="rounded-[1.55rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"><div className="flex items-center justify-between gap-3"><div><p className="text-[17px] font-black tracking-[-0.03em]">{row.label}</p><p className="text-sm font-semibold text-[#6E6E73]">{row.hint}</p></div><div className="flex h-11 min-w-11 items-center justify-center rounded-full bg-white px-3 text-xl font-black tracking-[-0.04em] text-[#007AFF] shadow-sm">{readiness[row.key]}</div></div><input type="range" min="1" max="10" value={readiness[row.key]} onChange={(e) => { setReadiness({ ...readiness, [row.key]: Number(e.target.value) }); haptic(); }} className="mt-4 w-full accent-[#007AFF]" /><div className="mt-1 flex justify-between px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8E8E93]"><span>{row.low}</span><span>{row.high}</span></div></div>)}</div></div><div className={ui.group + " p-4 space-y-3"}><div><p className={ui.label}>Profile</p><p className="mt-1 text-sm font-semibold text-[#6E6E73]">Used for display and future programming logic.</p></div><input className={ui.field} value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} placeholder="Name" /><input className={ui.field} value={profile.goal} onChange={(e) => setProfile({ ...profile, goal: e.target.value })} placeholder="Goal" /><input className={ui.field} value={profile.experience} onChange={(e) => setProfile({ ...profile, experience: e.target.value })} placeholder="Experience level" /><input className={ui.field} value={profile.weakPoint} onChange={(e) => setProfile({ ...profile, weakPoint: e.target.value })} placeholder="Weak point" /></div><div className="rounded-[2rem] border border-[#FF3B30]/15 bg-[#FFF4F4] p-4 shadow-[0_18px_60px_rgba(255,59,48,0.08)]"><div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#FF3B30] shadow-sm"><RotateCcw className="h-5 w-5" /></div><div><p className="text-[18px] font-black tracking-[-0.03em]">Reset training data</p><p className="mt-1 text-sm font-semibold leading-relaxed text-[#6E6E73]">This clears your local logs from this device. There is currently no cloud backup.</p></div></div><button type="button" onClick={resetData} className="mt-4 flex min-h-[58px] w-full items-center justify-center rounded-[1.35rem] bg-[#FF3B30] px-5 text-[16px] font-black tracking-[-0.02em] text-white shadow-[0_10px_26px_rgba(255,59,48,0.24)] transition active:scale-[0.985]">Reset All Training Data</button></div></div>;
   }
 
-function SettingsView() {
-  const rows = [
-    {
-      label: "Sleep",
-      key: "sleep",
-      hint: "Higher is better",
-      low: "Poor",
-      high: "Excellent"
-    },
-    {
-      label: "Soreness",
-      key: "soreness",
-      hint: "Lower is better",
-      low: "Fresh",
-      high: "Smashed"
-    },
-    {
-      label: "Stress",
-      key: "stress",
-      hint: "Lower is better",
-      low: "Calm",
-      high: "High"
-    },
-    {
-      label: "Motivation",
-      key: "motivation",
-      hint: "Higher is better",
-      low: "Low",
-      high: "High"
-    }
-  ];
-
-  function updateReadiness(key, value) {
-    setReadiness({ ...readiness, [key]: Number(value) });
-    haptic();
-  }
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-[36px] font-black tracking-[-0.045em]">Settings</h1>
-        <p className={ui.sub}>Recovery, profile, and app controls</p>
-      </div>
-
-      <Card className={ui.card}>
-        <CardContent className="space-y-5 p-4">
-          <div className="rounded-[1.7rem] bg-[#1D1D1F] p-5 text-white shadow-[0_14px_36px_rgba(0,0,0,0.16)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">
-                  Readiness
-                </p>
-
-                <p className="mt-1 text-[42px] font-black tracking-[-0.06em]">
-                  {readinessScore}%
-                </p>
-              </div>
-
-              <div className="flex h-14 w-14 items-center justify-center rounded-[1.2rem] bg-white/10">
-                <Zap className="h-7 w-7 text-[#FFD60A]" />
-              </div>
-            </div>
-
-            <p className="mt-3 text-sm font-semibold leading-relaxed text-white/70">
-              Used to adjust loading recommendations when fatigue is high.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {rows.map((row) => (
-              <div
-                key={row.key}
-                className="rounded-[1.55rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[17px] font-black tracking-[-0.03em] text-[#1D1D1F]">
-                      {row.label}
-                    </p>
-                    <p className="text-sm font-semibold text-[#6E6E73]">
-                      {row.hint}
-                    </p>
-                  </div>
-
-                  <div className="flex h-11 min-w-11 items-center justify-center rounded-full bg-white px-3 text-xl font-black tracking-[-0.04em] text-[#007AFF] shadow-sm">
-                    {readiness[row.key]}
-                  </div>
-                </div>
-
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={readiness[row.key]}
-                  onChange={(e) => updateReadiness(row.key, e.target.value)}
-                  className="mt-4 w-full accent-[#007AFF]"
-                />
-
-                <div className="mt-1 flex justify-between px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8E8E93]">
-                  <span>{row.low}</span>
-                  <span>{row.high}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className={ui.card}>
-        <CardContent className="space-y-3 p-4">
-          <div>
-            <p className={ui.label}>Profile</p>
-            <p className="mt-1 text-sm font-semibold text-[#6E6E73]">
-              Used for display and future programming logic.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <input
-              className={ui.field}
-              value={profile.name}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              placeholder="Name"
-            />
-
-            <input
-              className={ui.field}
-              value={profile.goal}
-              onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
-              placeholder="Goal"
-            />
-
-            <input
-              className={ui.field}
-              value={profile.experience}
-              onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
-              placeholder="Experience level"
-            />
-
-            <input
-              className={ui.field}
-              value={profile.weakPoint}
-              onChange={(e) => setProfile({ ...profile, weakPoint: e.target.value })}
-              placeholder="Weak point"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-[2rem] border border-[#FF3B30]/15 bg-[#FFF4F4] shadow-[0_18px_60px_rgba(255,59,48,0.08)]">
-        <CardContent className="space-y-4 p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#FF3B30] shadow-sm">
-              <RotateCcw className="h-5 w-5" />
-            </div>
-
-            <div>
-              <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
-                Reset training data
-              </p>
-              <p className="mt-1 text-sm font-semibold leading-relaxed text-[#6E6E73]">
-                This clears your local logs from this device. There is currently no cloud backup.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={resetData}
-            className="flex min-h-[58px] w-full items-center justify-center rounded-[1.35rem] bg-[#FF3B30] px-5 text-[16px] font-black tracking-[-0.02em] text-white shadow-[0_10px_26px_rgba(255,59,48,0.24)] transition active:scale-[0.985]"
-          >
-            Reset All Training Data
-          </button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-  return (
-    <div className={ui.page}>
-      <div className="pointer-events-none fixed inset-0 overflow-hidden"><div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.95),transparent_34%),radial-gradient(circle_at_top_right,rgba(0,122,255,0.10),transparent_28%)]" /><div className="absolute bottom-[-160px] left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[#007AFF]/[0.06] blur-3xl" /></div>
-      <div className="relative mx-auto max-w-md space-y-5">
-        <AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }}>{tab === "today" && <Today />}{tab === "progress" && <Progress />}{tab === "history" && <HistoryView />}{tab === "library" && <Library />}{tab === "settings" && <SettingsView />}</motion.div></AnimatePresence>
-      </div>
-
-      <AnimatePresence>{restSeconds > 0 && <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} className="fixed bottom-24 left-1/2 z-40 w-[92%] max-w-md -translate-x-1/2 rounded-[1.5rem] border border-black/[0.06] bg-[#1D1D1F]/95 p-3 text-white shadow-[0_20px_70px_rgba(0,0,0,0.28)] backdrop-blur-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10"><Timer className="h-5 w-5" /></div><div><p className="text-sm font-bold text-white/60">Rest Timer</p><p className="text-2xl font-black tracking-[-0.04em]">{formatTime(restSeconds)}</p></div></div><button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black" onClick={() => setRestSeconds(0)}>Skip</button></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#007AFF]" style={{ width: `${Math.min(100, (restSeconds / (activeExercise?.rest || 90)) * 100)}%` }} /></div></motion.div>}</AnimatePresence>
-
-      <AnimatePresence>{celebration && <motion.div initial={{ scale: 0.82, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="fixed left-1/2 top-24 z-50 w-[88%] max-w-sm -translate-x-1/2 rounded-[2rem] border border-[#FFD60A]/30 bg-white p-5 text-center shadow-[0_30px_90px_rgba(0,0,0,0.25)]"><Trophy className="mx-auto h-10 w-10 text-[#FF9500]" /><p className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-[#6E6E73]">New PR</p><p className="mt-1 text-2xl font-black tracking-[-0.04em]">{celebration}</p></motion.div>}</AnimatePresence>
-
-      <div className="fixed bottom-3 left-1/2 z-30 w-[94%] max-w-md -translate-x-1/2 rounded-[2rem] border border-black/[0.06] bg-white/90 p-2 shadow-[0_20px_70px_rgba(0,0,0,0.16)] backdrop-blur-2xl">
-        <div className="grid grid-cols-5 gap-1">{nav.map((item) => { const Icon = item.icon; const active = tab === item.id; return <button key={item.id} onClick={() => { setTab(item.id); haptic(); }} className={`flex flex-col items-center justify-center gap-1 rounded-[1.4rem] py-2 text-[10px] font-bold transition active:scale-95 ${active ? "bg-[#007AFF] text-white shadow-[0_8px_22px_rgba(0,122,255,0.22)]" : "text-[#6E6E73] hover:bg-[#F5F5F7]"}`}><Icon className="h-5 w-5" />{item.label}</button>; })}</div>
-      </div>
-    </div>
-  );
+  return <div className={ui.page}><div className="pointer-events-none fixed inset-0 overflow-hidden"><div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.96),transparent_34%),radial-gradient(circle_at_top_right,rgba(0,122,255,0.08),transparent_28%)]" /></div><div className={ui.screen}><AnimatePresence mode="wait"><motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }}>{tab === "today" && <Today />}{tab === "progress" && <Progress />}{tab === "history" && <HistoryView />}{tab === "library" && <Library />}{tab === "settings" && <SettingsView />}</motion.div></AnimatePresence></div><AnimatePresence>{restSeconds > 0 && <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} className="fixed bottom-24 left-1/2 z-40 w-[92%] max-w-md -translate-x-1/2 rounded-[1.5rem] border border-black/[0.06] bg-[#1D1D1F]/95 p-3 text-white shadow-[0_20px_70px_rgba(0,0,0,0.28)] backdrop-blur-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10"><Timer className="h-5 w-5" /></div><div><p className="text-sm font-bold text-white/60">Rest Timer</p><p className="text-2xl font-black tracking-[-0.04em]">{formatTime(restSeconds)}</p></div></div><button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black" onClick={() => setRestSeconds(0)}>Skip</button></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#007AFF]" style={{ width: `${Math.min(100, (restSeconds / (activeExercise?.rest || 90)) * 100)}%` }} /></div></motion.div>}</AnimatePresence><AnimatePresence>{celebration && <motion.div initial={{ scale: 0.82, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="fixed left-1/2 top-24 z-50 w-[88%] max-w-sm -translate-x-1/2 rounded-[2rem] border border-[#FFD60A]/30 bg-white p-5 text-center shadow-[0_30px_90px_rgba(0,0,0,0.25)]"><Trophy className="mx-auto h-10 w-10 text-[#FF9500]" /><p className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-[#6E6E73]">New PR</p><p className="mt-1 text-2xl font-black tracking-[-0.04em]">{celebration}</p></motion.div>}</AnimatePresence><div className="fixed bottom-3 left-1/2 z-30 w-[94%] max-w-md -translate-x-1/2 rounded-[2rem] border border-black/[0.06] bg-white/90 p-2 shadow-[0_18px_60px_rgba(0,0,0,0.14)] backdrop-blur-2xl"><div className="grid grid-cols-5 gap-1">{nav.map((item) => { const Icon = item.icon; const active = tab === item.id; return <button key={item.id} onClick={() => { setTab(item.id); haptic(); }} className={`flex flex-col items-center justify-center gap-1 rounded-[1.35rem] py-2 text-[10px] font-black transition active:scale-95 ${active ? "bg-[#007AFF] text-white shadow-[0_8px_22px_rgba(0,122,255,0.22)]" : "text-[#6E6E73] hover:bg-[#F5F5F7]"}`}><Icon className="h-5 w-5" />{item.label}</button>; })}</div></div></div>;
 }
