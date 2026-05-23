@@ -356,10 +356,27 @@ export default function HypertrophyTrackerApp() {
   useEffect(() => { if (restSeconds <= 0) return; const t = setTimeout(() => setRestSeconds((s) => Math.max(0, s - 1)), 1000); if (restSeconds === 1) haptic(50); return () => clearTimeout(t); }, [restSeconds]);
   useEffect(() => { if (!celebration) return; const t = setTimeout(() => setCelebration(null), 2300); return () => clearTimeout(t); }, [celebration]);
 
-  const dayExercises = useMemo(() => exercises.filter((e) => e.day === selectedDay), [exercises, selectedDay]);
-  const activeExercise = exercises.find((e) => e.id === activeExerciseId) || dayExercises[0] || exercises[0];
-  const readinessScore = Math.round((readiness.sleep * 10 + (10 - readiness.soreness) * 10 + (10 - readiness.stress) * 10 + readiness.motivation * 10) / 4);
-  const rec = activeExercise ? recommendation(activeExercise, lastSession, weekNumber, readinessScore, profile) : null;
+const dayExercises = useMemo(
+  () => exercises.filter((e) => e.day === selectedDay),
+  [exercises, selectedDay]
+);
+
+const activeExercise =
+  exercises.find((e) => e.id === activeExerciseId) || dayExercises[0] || exercises[0];
+
+const readinessScore = Math.round(
+  (readiness.sleep * 10 +
+    (10 - readiness.soreness) * 10 +
+    (10 - readiness.stress) * 10 +
+    readiness.motivation * 10) /
+    4
+);
+
+const lastSession = activeExercise ? getLastSession(logs, activeExercise.id) : null;
+
+const rec = activeExercise
+  ? recommendation(activeExercise, lastSession, weekNumber, readinessScore, profile)
+  : null;
 
   useEffect(() => {
     const first = exercises.find((e) => e.day === selectedDay);
@@ -381,8 +398,17 @@ export default function HypertrophyTrackerApp() {
   const todayCompletion = dayExercises.length ? Math.round((weeklyLogs.filter((l) => l.day === selectedDay).length / dayExercises.length) * 100) : 0;
   const progressData = useMemo(() => activeExercise ? getExerciseSessions(logs, activeExercise.id).slice().reverse().map((s, i) => ({ session: i + 1, weight: bestWeightFromSession(s), volume: sessionVolume(s) })) : [], [logs, activeExercise]);
   const volumeTrend = useMemo(() => Array.from({ length: Math.max(weekNumber, 6) }, (_, i) => i + 1).map((w) => ({ week: w, volume: logs.filter((l) => Number(l.weekNumber) === w).reduce((s, l) => s + sessionVolume(l), 0) })), [logs, weekNumber]);
-  const coachingInsight = readinessScore < 55 ? "Readiness is poor. Reduce load or total sets." : weekNumber % 6 === 0 ? "Deload week. Leave the ego at the door." : completedThisWeek < 3 ? "Priority: complete the planned sessions." : weeklyVolume > 0 ? "Momentum is building. Progress one variable at a time." : "Start the week. First goal is clean logging.";
-
+const coachingInsight =
+  readinessScore < 55
+    ? "Readiness is poor. Reduce load or total sets."
+    : weekNumber % (Number(profile.deloadFrequency) || 6) === 0
+      ? `Deload week. Your profile is set to deload every ${profile.deloadFrequency || 6} weeks. Leave the ego at the door.`
+      : completedThisWeek < 3
+        ? "Priority: complete the planned sessions."
+        : weeklyVolume > 0
+          ? "Momentum is building. Progress one variable at a time."
+          : "Start the week. First goal is clean logging.";
+          
   const updateSet = (index, key, value) => setSetInputs(setInputs.map((s, i) => i === index ? { ...s, [key]: value } : s));
   const markSetComplete = (index) => { setSetInputs(setInputs.map((s, i) => i === index ? { ...s, complete: true } : s)); setRestSeconds(activeExercise?.rest || 90); haptic(20); };
   const detectPR = (entry) => {
@@ -433,7 +459,6 @@ export default function HypertrophyTrackerApp() {
   function TrainingPanel() {
   return (
     <section className="space-y-4">
-<TrainingPanel />
       <div className="flex items-end justify-between px-1">
         <div>
           <h2 className="text-[30px] font-black tracking-[-0.06em] text-[#1D1D1F]">
