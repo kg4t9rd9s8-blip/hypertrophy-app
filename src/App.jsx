@@ -260,10 +260,296 @@ export default function HypertrophyTrackerApp() {
   function RecommendationCard() {
     return <div className={`rounded-[1.55rem] border px-4 py-4 ${recClass(rec?.tone)}`}><div className="flex items-center justify-between gap-3"><div><p className="text-[11px] font-black uppercase tracking-[0.16em] opacity-70">Recommendation</p><p className="mt-1 text-[28px] font-black leading-tight tracking-[-0.05em]">{rec?.label}</p></div><Target className="h-6 w-6 opacity-80" /></div><p className="mt-1 text-[22px] font-black tracking-[-0.04em]">{rec?.weight ? `${rec.weight} kg` : "Choose load"}</p><p className="mt-2 text-sm font-semibold leading-snug opacity-90">{rec?.reason}</p></div>;
   }
+  function TrainingPanel() {
+  return (
+    <section className="space-y-4">
+<TrainingPanel />
+      <div className="flex items-end justify-between px-1">
+        <div>
+          <h2 className="text-[30px] font-black tracking-[-0.06em] text-[#1D1D1F]">
+            Training
+          </h2>
+          <p className="mt-1 text-sm font-semibold text-[#6E6E73]">
+            {selectedDay} · {dayExercises.length} exercises
+          </p>
+        </div>
 
-  function Today() {
-    return <div className="space-y-5"><Header title="Today" subtitle={`${selectedDay} · ${profile.goal} · ${profile.experience}`} accessory={<div className="rounded-[1.25rem] bg-[#1D1D1F] p-3 text-white shadow-[0_12px_30px_rgba(0,0,0,0.16)]"><Dumbbell className="h-7 w-7" /></div>} /><div className="grid grid-cols-3 gap-2"><Metric label="Week" value={weekNumber} icon={CalendarDays} /><Metric label="Ready" value={`${readinessScore}%`} icon={Zap} dark /><Metric label="Done" value={`${todayCompletion}%`} icon={Check} /></div><div className={ui.group}><div className="px-4 py-3.5"><p className={ui.label}>Coach</p><p className="mt-1 text-base font-black leading-tight tracking-[-0.02em]">{coachingInsight}</p></div><div className={ui.divider + " grid grid-cols-2 gap-2 p-3"}><Button className={ui.primary} onClick={() => { setSessionMode(!sessionMode); haptic(15); }}><Sparkles className="mr-2 h-5 w-5" />{sessionMode ? "Exit" : "Start"}</Button><div className="flex items-center justify-center rounded-[1.35rem] bg-[#F2F2F7]"><WeekControl weekNumber={weekNumber} setWeekNumber={setWeekNumber} /></div></div></div><div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">{days.map((day) => <button key={day} onClick={() => { setSelectedDay(day); haptic(); }} className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-black transition active:scale-[0.98] ${selectedDay === day ? "bg-[#1D1D1F] text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)]" : "bg-white text-[#1D1D1F] shadow-sm"}`}>{day}</button>)}</div>{sessionMode && <div className={ui.group}><div className="grid grid-cols-3 items-center gap-2 p-2"><button className={ui.secondary} onClick={prevExercise}>Previous</button><p className="text-center text-sm font-black text-[#6E6E73]">{sessionIndex + 1}/{dayExercises.length}</p><button className={ui.primary + " min-h-[52px] text-[15px]"} onClick={nextExercise}>Next</button></div></div>}<Section title="Training"><ExerciseSelector /></Section><RecommendationCard /><SetCards /><Button onClick={saveSession} className={ui.primary}><Check className="mr-2 h-5 w-5" />Save Exercise</Button><ProgressBlock compact /></div>;
-  }
+        <div className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#8E8E93] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
+          Week {weekNumber}
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 shadow-[0_18px_46px_rgba(0,0,0,0.10)] backdrop-blur-2xl">
+        <div className="relative p-5">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white via-white to-[#EEF6FF]" />
+
+          <div className="relative">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8E8E93]">
+                  Current Exercise
+                </p>
+
+                <div className="relative mt-3">
+                  <select
+                    className="w-full appearance-none bg-transparent pr-12 text-[22px] font-black leading-tight tracking-[-0.045em] text-[#1D1D1F] outline-none"
+                    value={activeExercise?.id || ""}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setActiveExerciseId(id);
+                      setSessionIndex(dayExercises.findIndex((x) => x.id === id));
+                      haptic();
+                    }}
+                  >
+                    {dayExercises.map((exercise) => {
+                      const lastWeight = bestWeightFromSession(getLastSession(logs, exercise.id));
+                      return (
+                        <option key={exercise.id} value={exercise.id}>
+                          {exercise.name}
+                          {lastWeight ? ` · ${lastWeight}kg` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <div className="pointer-events-none absolute right-0 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#F2F2F7] text-[#007AFF] shadow-inner shadow-black/[0.03]">
+                    <ChevronDown className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-[#007AFF] text-white shadow-[0_10px_24px_rgba(0,122,255,0.25)]">
+                <Dumbbell className="h-6 w-6" />
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-[1.4rem] border border-black/[0.05] bg-[#F5F5F7]">
+              <div className="p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8E8E93]">
+                  Muscle
+                </p>
+                <p className="mt-1 truncate text-sm font-black tracking-[-0.02em] text-[#1D1D1F]">
+                  {activeExercise?.muscle}
+                </p>
+              </div>
+
+              <div className="border-x border-black/[0.05] p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8E8E93]">
+                  Reps
+                </p>
+                <p className="mt-1 text-sm font-black tracking-[-0.02em] text-[#1D1D1F]">
+                  {activeExercise?.targetMin}-{activeExercise?.targetMax}
+                </p>
+              </div>
+
+              <div className="p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8E8E93]">
+                  RIR
+                </p>
+                <p className="mt-1 text-sm font-black tracking-[-0.02em] text-[#1D1D1F]">
+                  {activeExercise?.rirTarget}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+function Today() {
+  return (
+    <div className="space-y-5">
+      <Header
+        title="Today"
+        subtitle={`${selectedDay} · ${profile.goal} · ${profile.experience}`}
+        accessory={
+          <div className="rounded-[1.25rem] bg-[#1D1D1F] p-3 text-white shadow-[0_12px_30px_rgba(0,0,0,0.16)]">
+            <Dumbbell className="h-7 w-7" />
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-3 gap-2">
+        <Metric label="Week" value={weekNumber} icon={CalendarDays} />
+        <Metric label="Ready" value={`${readinessScore}%`} icon={Zap} dark />
+        <Metric label="Done" value={`${todayCompletion}%`} icon={Check} />
+      </div>
+
+      <div className={ui.group}>
+        <div className="px-4 py-3.5">
+          <p className={ui.label}>Coach</p>
+          <p className="mt-1 text-base font-black leading-tight tracking-[-0.02em]">
+            {coachingInsight}
+          </p>
+        </div>
+
+        <div className={ui.divider + " grid grid-cols-2 gap-2 p-3"}>
+          <Button
+            className={ui.primary}
+            onClick={() => {
+              setSessionMode(!sessionMode);
+              haptic(15);
+            }}
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            {sessionMode ? "Exit" : "Start"}
+          </Button>
+
+          <div className="flex items-center justify-center rounded-[1.35rem] bg-[#F2F2F7]">
+            <WeekControl weekNumber={weekNumber} setWeekNumber={setWeekNumber} />
+          </div>
+        </div>
+      </div>
+
+      <section className="space-y-4">
+        <div className="flex gap-2 overflow-x-auto px-1 pb-1 no-scrollbar">
+          {days.map((day) => {
+            const active = selectedDay === day;
+
+            return (
+              <button
+                key={day}
+                type="button"
+                onClick={() => {
+                  setSelectedDay(day);
+                  haptic();
+                }}
+                className={`shrink-0 rounded-full px-5 py-3 text-[15px] font-semibold tracking-[-0.02em] transition active:scale-[0.97] ${
+                  active
+                    ? "bg-[#1D1D1F] text-white shadow-[0_10px_28px_rgba(0,0,0,0.22)]"
+                    : "border border-black/[0.05] bg-white/85 text-[#1D1D1F] shadow-[0_7px_18px_rgba(0,0,0,0.07)] backdrop-blur-xl"
+                }`}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-end justify-between px-1">
+          <div>
+            <h2 className="text-[30px] font-black tracking-[-0.06em] text-[#1D1D1F]">
+              Training
+            </h2>
+            <p className="mt-1 text-sm font-semibold text-[#6E6E73]">
+              {selectedDay} · {dayExercises.length} exercises
+            </p>
+          </div>
+
+          <div className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#8E8E93] shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
+            Week {weekNumber}
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 shadow-[0_18px_46px_rgba(0,0,0,0.10)] backdrop-blur-2xl">
+          <div className="relative p-5">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white via-white to-[#EEF6FF]" />
+
+            <div className="relative">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8E8E93]">
+                    Current Exercise
+                  </p>
+
+                  <div className="relative mt-3">
+                    <select
+                      className="w-full appearance-none bg-transparent pr-12 text-[22px] font-black leading-tight tracking-[-0.045em] text-[#1D1D1F] outline-none"
+                      value={activeExercise?.id || ""}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        setActiveExerciseId(id);
+                        setSessionIndex(dayExercises.findIndex((x) => x.id === id));
+                        haptic();
+                      }}
+                    >
+                      {dayExercises.map((exercise) => {
+                        const lastWeight = bestWeightFromSession(getLastSession(logs, exercise.id));
+
+                        return (
+                          <option key={exercise.id} value={exercise.id}>
+                            {exercise.name}
+                            {lastWeight ? ` · ${lastWeight}kg` : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+
+                    <div className="pointer-events-none absolute right-0 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#F2F2F7] text-[#007AFF] shadow-inner shadow-black/[0.03]">
+                      <ChevronDown className="h-5 w-5" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-[#007AFF] text-white shadow-[0_10px_24px_rgba(0,122,255,0.25)]">
+                  <Dumbbell className="h-6 w-6" />
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-[1.4rem] border border-black/[0.05] bg-[#F5F5F7]">
+                <div className="p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8E8E93]">
+                    Muscle
+                  </p>
+                  <p className="mt-1 truncate text-sm font-black tracking-[-0.02em] text-[#1D1D1F]">
+                    {activeExercise?.muscle}
+                  </p>
+                </div>
+
+                <div className="border-x border-black/[0.05] p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8E8E93]">
+                    Reps
+                  </p>
+                  <p className="mt-1 text-sm font-black tracking-[-0.02em] text-[#1D1D1F]">
+                    {activeExercise?.targetMin}-{activeExercise?.targetMax}
+                  </p>
+                </div>
+
+                <div className="p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#8E8E93]">
+                    RIR
+                  </p>
+                  <p className="mt-1 text-sm font-black tracking-[-0.02em] text-[#1D1D1F]">
+                    {activeExercise?.rirTarget}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {sessionMode && (
+        <div className={ui.group}>
+          <div className="grid grid-cols-3 items-center gap-2 p-2">
+            <button className={ui.secondary} onClick={prevExercise}>
+              Previous
+            </button>
+
+            <p className="text-center text-sm font-black text-[#6E6E73]">
+              {sessionIndex + 1}/{dayExercises.length}
+            </p>
+
+            <button className={ui.primary + " min-h-[52px] text-[15px]"} onClick={nextExercise}>
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      <RecommendationCard />
+      <SetCards />
+
+      <Button onClick={saveSession} className={ui.primary}>
+        <Check className="mr-2 h-5 w-5" />
+        Save Exercise
+      </Button>
+
+      <ProgressBlock compact />
+    </div>
+  );
+}
   function Progress() {
     return <div className="space-y-5"><Header title="Progress" subtitle={`Week ${weekNumber} training data`} accessory={<WeekControl weekNumber={weekNumber} setWeekNumber={setWeekNumber} />} /><Section title="Exercise"><ExerciseSelector /></Section><ProgressBlock /><Section title="Weekly Volume"><div className={ui.group}><div className="h-64 p-3"><ResponsiveContainer width="100%" height="100%"><LineChart data={volumeTrend}><XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: "#6E6E73", fontWeight: 700 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#6E6E73", fontWeight: 700 }} /><Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "18px", fontWeight: 700 }} /><Line type="monotone" dataKey="volume" stroke="#1D1D1F" strokeWidth={4} dot={false} /></LineChart></ResponsiveContainer></div></div></Section></div>;
   }
