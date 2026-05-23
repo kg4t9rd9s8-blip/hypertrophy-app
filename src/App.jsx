@@ -446,9 +446,54 @@ export default function HypertrophyTrackerApp() {
         </motion.div>
 
         <Card className={ui.card}><CardContent className="space-y-4 p-4">
-          <div className="grid grid-cols-3 gap-2"><TinyMetric label="Week" value={weekNumber} icon={CalendarDays} /><TinyMetric label="Ready" value={`${readinessScore}%`} icon={Zap} /><TinyMetric label="Done" value={`${todayCompletion}%`} icon={Check} /></div>
-          <div className="rounded-[1.5rem] border border-black/[0.06] bg-[#F5F5F7] p-4"><p className={ui.label}>Coach</p><p className="mt-2 text-lg font-black leading-tight tracking-[-0.025em]">{coachingInsight}</p></div>
-          <div className="grid grid-cols-2 gap-2"><Button className={ui.primary} onClick={() => setSessionMode(!sessionMode)}><Sparkles className="mr-2 h-5 w-5" />{sessionMode ? "Exit Flow" : "Start Session"}</Button><Button variant="outline" className={ui.ghost + " py-5"} onClick={() => setWeekNumber(weekNumber + 1)}>Next Week</Button></div>
+          <div className="grid grid-cols-3 gap-2">
+  <div className={ui.soft + " p-3.5"}>
+    <div className="flex items-center justify-between gap-2">
+      <p className={ui.label}>Week</p>
+      <CalendarDays className="h-4 w-4 text-[#007AFF]" />
+    </div>
+
+    <div className="mt-2 flex items-center justify-between gap-2">
+      <button
+        type="button"
+        disabled={weekNumber <= 1}
+        onClick={() => {
+          setWeekNumber(Math.max(1, weekNumber - 1));
+          haptic();
+        }}
+        className={`flex h-9 w-9 items-center justify-center rounded-full font-black transition active:scale-95 ${
+          weekNumber <= 1
+            ? "bg-[#E5E5EA] text-[#AEAEB2]"
+            : "bg-white text-[#007AFF] shadow-sm"
+        }`}
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+
+      <p className="text-2xl font-black tracking-[-0.04em]">{weekNumber}</p>
+
+      <button
+        type="button"
+        onClick={() => {
+          setWeekNumber(weekNumber + 1);
+          haptic();
+        }}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-[#007AFF] font-black text-white shadow-sm transition active:scale-95"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+
+  <TinyMetric label="Ready" value={`${readinessScore}%`} icon={Zap} />
+  <TinyMetric label="Done" value={`${todayCompletion}%`} icon={Check} />
+</div>
+        <div className="grid grid-cols-1 gap-2">
+  <Button className={ui.primary} onClick={() => setSessionMode(!sessionMode)}>
+    <Sparkles className="mr-2 h-5 w-5" />
+    {sessionMode ? "Exit Flow" : "Start Session"}
+  </Button>
+</div>
         </CardContent></Card>
 
         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">{days.map((d) => <button key={d} onClick={() => { setSelectedDay(d); haptic(); }} className={`whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] ${selectedDay === d ? "border-[#1D1D1F] bg-[#1D1D1F] text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)]" : "border-black/[0.06] bg-white/80 text-[#1D1D1F] hover:bg-white"}`}>{d}</button>)}</div>
@@ -465,13 +510,185 @@ export default function HypertrophyTrackerApp() {
     );
   }
 
-  function Progress() {
-    return <div className="space-y-5"><h1 className="text-[36px] font-black tracking-[-0.045em]">Progress</h1><Card className={ui.card}><CardContent className="space-y-4 p-4"><ExerciseSelector /><ProgressBlock /></CardContent></Card><Card className={ui.card}><CardContent className="space-y-4 p-4"><div className="flex items-center gap-2"><Activity className="h-5 w-5 text-[#007AFF]" /><h2 className="text-lg font-black tracking-[-0.02em]">Weekly Volume</h2></div><div className="h-64 rounded-[1.5rem] bg-white p-3"><ResponsiveContainer width="100%" height="100%"><LineChart data={volumeTrend}><XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: "#6E6E73", fontWeight: 700 }} /><YAxis axisLine={false} tickLine={false} tick={{ fill: "#6E6E73", fontWeight: 700 }} /><Tooltip contentStyle={{ backgroundColor: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "18px", fontWeight: 700 }} /><Line type="monotone" dataKey="volume" stroke="#1D1D1F" strokeWidth={4} dot={false} /></LineChart></ResponsiveContainer></div></CardContent></Card></div>;
-  }
+function Progress() {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-[36px] font-black tracking-[-0.045em]">Progress</h1>
+          <p className={ui.sub}>Week {weekNumber} training data</p>
+        </div>
 
+        <div className="flex items-center gap-2 rounded-full bg-white p-1 shadow-sm">
+          <button
+            type="button"
+            disabled={weekNumber <= 1}
+            onClick={() => {
+              setWeekNumber(Math.max(1, weekNumber - 1));
+              haptic();
+            }}
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${
+              weekNumber <= 1
+                ? "bg-[#F2F2F7] text-[#C7C7CC]"
+                : "bg-[#F2F2F7] text-[#007AFF]"
+            }`}
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+
+          <span className="min-w-8 text-center text-sm font-black">{weekNumber}</span>
+
+          <button
+            type="button"
+            onClick={() => {
+              setWeekNumber(weekNumber + 1);
+              haptic();
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#007AFF] text-white transition active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <Card className={ui.card}>
+        <CardContent className="space-y-4 p-4">
+          <ExerciseSelector />
+          <ProgressBlock />
+        </CardContent>
+      </Card>
+
+      <Card className={ui.card}>
+        <CardContent className="space-y-4 p-4">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-[#007AFF]" />
+            <h2 className="text-lg font-black tracking-[-0.02em]">Weekly Volume</h2>
+          </div>
+
+          <div className="h-64 rounded-[1.5rem] bg-white p-3">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={volumeTrend}>
+                <XAxis
+                  dataKey="week"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#6E6E73", fontWeight: 700 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#6E6E73", fontWeight: 700 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                    borderRadius: "18px",
+                    fontWeight: 700
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="volume"
+                  stroke="#1D1D1F"
+                  strokeWidth={4}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
   function HistoryView() {
-    return <div className="space-y-5"><h1 className="text-[36px] font-black tracking-[-0.045em]">History</h1><Card className={ui.card}><CardContent className="space-y-3 p-4">{logs.length === 0 && <p className="rounded-[1.25rem] bg-[#F5F5F7] p-4 text-sm font-semibold text-[#6E6E73]">No sessions logged yet.</p>}{logs.map((l) => <div key={l.id} className="rounded-[1.6rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"><div className="flex justify-between gap-2"><div className="min-w-0"><p className="font-black leading-tight tracking-[-0.02em]">{l.exerciseName}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#6E6E73]">Week {l.weekNumber} · {new Date(l.date).toLocaleDateString()}</p></div><button onClick={() => setLogs(logs.filter((x) => x.id !== l.id))} className="rounded-xl p-2 text-[#6E6E73] hover:bg-white hover:text-[#FF3B30]"><Trash2 className="h-4 w-4" /></button></div><p className="mt-3 rounded-[1.2rem] bg-white p-3 text-sm font-bold leading-snug"><BarChart3 className="mr-1 inline h-4 w-4 text-[#007AFF]" />Volume: {Math.round(sessionVolume(l)).toLocaleString()} kg<br /><span className="text-[#6E6E73]">{l.sets.map((s) => `${s.weight || "?"}×${s.reps || "?"}`).join(" / ")}</span></p></div>)}</CardContent></Card></div>;
-  }
+  const visibleLogs = logs.filter((l) => Number(l.weekNumber) === Number(weekNumber));
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-[36px] font-black tracking-[-0.045em]">History</h1>
+          <p className={ui.sub}>Viewing Week {weekNumber}</p>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-full bg-white p-1 shadow-sm">
+          <button
+            type="button"
+            disabled={weekNumber <= 1}
+            onClick={() => {
+              setWeekNumber(Math.max(1, weekNumber - 1));
+              haptic();
+            }}
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${
+              weekNumber <= 1
+                ? "bg-[#F2F2F7] text-[#C7C7CC]"
+                : "bg-[#F2F2F7] text-[#007AFF]"
+            }`}
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+
+          <span className="min-w-8 text-center text-sm font-black">{weekNumber}</span>
+
+          <button
+            type="button"
+            onClick={() => {
+              setWeekNumber(weekNumber + 1);
+              haptic();
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#007AFF] text-white transition active:scale-95"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <Card className={ui.card}>
+        <CardContent className="space-y-3 p-4">
+          {visibleLogs.length === 0 && (
+            <p className="rounded-[1.25rem] bg-[#F5F5F7] p-4 text-sm font-semibold text-[#6E6E73]">
+              No sessions logged for Week {weekNumber}.
+            </p>
+          )}
+
+          {visibleLogs.map((l) => (
+            <div
+              key={l.id}
+              className="rounded-[1.6rem] border border-black/[0.06] bg-[#F5F5F7] p-4 shadow-inner shadow-black/[0.03]"
+            >
+              <div className="flex justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-black leading-tight tracking-[-0.02em]">{l.exerciseName}</p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#6E6E73]">
+                    Week {l.weekNumber} · {new Date(l.date).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setLogs(logs.filter((x) => x.id !== l.id))}
+                  className="rounded-xl p-2 text-[#6E6E73] hover:bg-white hover:text-[#FF3B30]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+
+              <p className="mt-3 rounded-[1.2rem] bg-white p-3 text-sm font-bold leading-snug">
+                <BarChart3 className="mr-1 inline h-4 w-4 text-[#007AFF]" />
+                Volume: {Math.round(sessionVolume(l)).toLocaleString()} kg
+                <br />
+                <span className="text-[#6E6E73]">
+                  {l.sets.map((s) => `${s.weight || "?"}×${s.reps || "?"}`).join(" / ")}
+                </span>
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
   function Library() {
     return <div className="space-y-5"><h1 className="text-[36px] font-black tracking-[-0.045em]">Library</h1><Card className={ui.card}><CardContent className="space-y-3 p-4"><div className="flex items-center gap-2"><Plus className="h-5 w-5 text-[#007AFF]" /><h2 className="text-lg font-black tracking-[-0.02em]">Add Exercise</h2></div><input value={newExercise.name} onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })} placeholder="Exercise name" className={ui.field} /><input value={newExercise.muscle} onChange={(e) => setNewExercise({ ...newExercise, muscle: e.target.value })} placeholder="Muscle group" className={ui.field} /><select value={newExercise.day} onChange={(e) => setNewExercise({ ...newExercise, day: e.target.value })} className={ui.field}>{days.map((d) => <option key={d}>{d}</option>)}</select><Button onClick={addExercise} className="w-full rounded-[1.25rem] bg-[#1D1D1F] py-5 font-bold text-white hover:bg-black">Add exercise</Button></CardContent></Card><Card className={ui.card}><CardContent className="space-y-2 p-4">{exercises.map((e) => <div key={e.id} className="flex items-center justify-between rounded-[1.4rem] bg-[#F5F5F7] p-3"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-black text-[#007AFF]">{e.icon}</div><div><p className="font-black tracking-[-0.02em]">{e.name}</p><p className="text-sm font-semibold text-[#6E6E73]">{e.day} · {e.muscle}</p></div></div><ChevronRight className="h-5 w-5 text-[#C7C7CC]" /></div>)}</CardContent></Card></div>;
