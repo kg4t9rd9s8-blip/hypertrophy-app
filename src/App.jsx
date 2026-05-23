@@ -175,15 +175,38 @@ function formatTime(seconds) {
 
 function Stepper({ value, setValue, step = 1, min = 0, suffix = "" }) {
   const n = Number(value) || 0;
+
   return (
-    <div className="flex items-center justify-between rounded-[1.2rem] border border-black/[0.06] bg-white p-1 shadow-sm">
-      <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F7] text-[#007AFF] active:scale-95" onClick={() => { setValue(Math.max(min, roundToIncrement(n - step, step))); haptic(); }}><Minus className="h-4 w-4" /></button>
-      <div className="min-w-16 text-center text-xl font-black tracking-[-0.03em]">{value || 0}{suffix}</div>
-      <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#007AFF] text-white active:scale-95" onClick={() => { setValue(roundToIncrement(n + step, step)); haptic(); }}><Plus className="h-4 w-4" /></button>
+    <div className="flex h-11 items-center justify-between rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06),0_3px_10px_rgba(0,0,0,0.05)]">
+      <button
+        type="button"
+        className="flex h-11 w-11 items-center justify-center rounded-full text-[#007AFF] transition active:scale-90 active:bg-[#EAF3FF]"
+        onClick={() => {
+          setValue(Math.max(min, roundToIncrement(n - step, step)));
+          haptic();
+        }}
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+
+      <div className="min-w-10 text-center text-[20px] font-black tracking-[-0.04em] text-[#1D1D1F]">
+        {value || 0}
+        {suffix}
+      </div>
+
+      <button
+        type="button"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-[0_4px_12px_rgba(0,122,255,0.24)] transition active:scale-90"
+        onClick={() => {
+          setValue(roundToIncrement(n + step, step));
+          haptic();
+        }}
+      >
+        <Plus className="h-4 w-4" />
+      </button>
     </div>
   );
 }
-
 function TinyMetric({ label, value, icon: Icon }) {
   return (
     <div className={ui.soft + " p-3.5"}>
@@ -377,29 +400,93 @@ export default function HypertrophyTrackerApp() {
     );
   }
 
-  function SetCards() {
-    return (
-      <div className="space-y-3">
-        {setInputs.map((s, i) => (
-          <motion.div layout key={i} className={`rounded-[1.7rem] border p-4 shadow-sm ${s.complete ? "border-[#34C759]/30 bg-[#EDFAF1]" : "border-black/[0.06] bg-[#F5F5F7]"}`}>
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black ${s.complete ? "bg-[#34C759] text-white" : "bg-white text-[#007AFF]"}`}>{s.complete ? <Check className="h-4 w-4" /> : i + 1}</div>
-                <div><p className="font-black tracking-[-0.02em]">Set {i + 1}</p><p className="text-xs font-semibold text-[#6E6E73]">Swipe-free quick controls</p></div>
+function SetCards() {
+  return (
+    <div className="space-y-3">
+      {setInputs.map((s, i) => (
+        <motion.div
+          layout
+          key={i}
+          className={`overflow-hidden rounded-[1.7rem] border shadow-[0_8px_24px_rgba(0,0,0,0.055)] transition ${
+            s.complete
+              ? "border-[#34C759]/25 bg-[#F0FBF4]"
+              : "border-black/[0.06] bg-white"
+          }`}
+        >
+          <div className="flex items-center justify-between px-4 pt-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${
+                  s.complete
+                    ? "bg-[#34C759] text-white"
+                    : "bg-[#F2F2F7] text-[#007AFF]"
+                }`}
+              >
+                {s.complete ? <Check className="h-4 w-4" /> : i + 1}
               </div>
-              <button className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#007AFF]" onClick={() => markSetComplete(i)}>Complete</button>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div><p className={ui.label}>kg</p><Stepper value={s.weight} setValue={(v) => updateSet(i, "weight", v)} step={activeExercise?.increment || 2.5} suffix="" /></div>
-              <div><p className={ui.label}>reps</p><Stepper value={s.reps} setValue={(v) => updateSet(i, "reps", v)} step={1} suffix="" /></div>
-              <div><p className={ui.label}>RIR</p><Stepper value={s.rir} setValue={(v) => updateSet(i, "rir", Math.min(5, v))} step={1} suffix="" /></div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    );
-  }
 
+              <div>
+                <p className="text-[18px] font-black tracking-[-0.03em] text-[#1D1D1F]">
+                  Set {i + 1}
+                </p>
+                <p className="text-sm font-semibold text-[#6E6E73]">
+                  {s.complete ? "Completed" : "Enter load, reps, and RIR"}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => markSetComplete(i)}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition active:scale-95 ${
+                s.complete
+                  ? "bg-[#34C759] text-white"
+                  : "bg-[#F2F2F7] text-[#007AFF]"
+              }`}
+            >
+              {s.complete ? "Done" : "Complete"}
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 divide-x divide-black/[0.06] border-t border-black/[0.06] bg-[#F9F9FB]">
+            <div className="space-y-2 p-3">
+              <p className="text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
+                kg
+              </p>
+              <Stepper
+                value={s.weight}
+                setValue={(v) => updateSet(i, "weight", v)}
+                step={activeExercise?.increment || 2.5}
+              />
+            </div>
+
+            <div className="space-y-2 p-3">
+              <p className="text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
+                reps
+              </p>
+              <Stepper
+                value={s.reps}
+                setValue={(v) => updateSet(i, "reps", v)}
+                step={1}
+              />
+            </div>
+
+            <div className="space-y-2 p-3">
+              <p className="text-center text-[10px] font-black uppercase tracking-[0.16em] text-[#8E8E93]">
+                RIR
+              </p>
+              <Stepper
+                value={s.rir}
+                setValue={(v) => updateSet(i, "rir", Math.min(5, v))}
+                step={1}
+              />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
   function ProgressBlock({ compact = false }) {
     const hasData = progressData.length > 0;
     return (
@@ -515,8 +602,22 @@ export default function HypertrophyTrackerApp() {
           <ExerciseSelector />
           <div className={`rounded-[1.6rem] border p-5 ${recClass(rec?.tone)}`}><div className="flex items-center gap-2"><Target className="h-5 w-5" /><p className="text-sm font-black uppercase tracking-wide">Recommendation</p></div><p className="mt-2 text-3xl font-black leading-tight tracking-[-0.04em]">{rec?.label}</p><p className="mt-1 text-2xl font-black tracking-[-0.03em]">{rec?.weight ? `${rec.weight} kg` : "Choose load"}</p><p className="mt-2 text-sm font-semibold leading-snug opacity-90">{rec?.reason}</p></div>
           <SetCards />
-          <Button onClick={saveSession} className={ui.primary}><Check className="mr-2 h-5 w-5" /> Save Exercise</Button>
-          <ProgressBlock compact />
+<Button
+  onClick={saveSession}
+  className="group relative flex h-20 w-full items-center justify-center overflow-hidden rounded-[1.7rem] bg-[#007AFF] px-6 text-white shadow-[0_14px_36px_rgba(0,122,255,0.28)] transition-all duration-200 hover:bg-[#006FE6] active:scale-[0.985]"
+>
+  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/10" />
+
+  <div className="relative flex items-center justify-center gap-3">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+      <Check className="h-5 w-5" />
+    </div>
+
+    <span className="text-[19px] font-black tracking-[-0.02em]">
+      Save Exercise
+    </span>
+  </div>
+</Button>          <ProgressBlock compact />
         </CardContent></Card>
       </div>
     );
